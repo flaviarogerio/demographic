@@ -1,0 +1,41 @@
+fname: ../data/filtered_genotyped_combined_outgroup_208samples_pass_filter5_renamed.vcf
+samples: ../data/list_samples.yml
+outgroup: C_navitas
+N_NA: 46
+N_BR: 20
+N_EU: 141
+MAF: 0.05
+models:
+    M31: indianred
+    M32: red
+    M33: coral
+    M34: salmon
+    M35: sienna
+    M36: darkorange
+    M37: gold
+    M38: chartreuse
+    M39: palegreen
+    M3A: seagreen
+    M3B: cyan
+    M3C: deepskyblue
+    M3D: gray
+windows:
+    max_dist: 10000
+    max_width: 10000
+simul:
+    nthreads: 40
+    nbatch: 50
+    szbatch: 10000
+    thin: 100
+priors:
+    nr: 10000
+    nbins: 30
+plot:
+    maxi: 100000
+    nbins: 50
+lda:
+    maxi: 50000
+    thin: 500
+ranger:
+    nthreads: 40
+    lim: [100000, 200000, 300000, 400000, 500000]
