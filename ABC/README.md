@@ -17,8 +17,8 @@ windows.py
 
 Extracts sites from the input VCF and group them in windows.
 
-Requires: VCF + sample structure.
-Generates: windows.yml, windows/*
+* Requires: VCF + sample structure.
+* Generates: windows.yml, windows/*
 
 stats.py
 --------
@@ -26,8 +26,8 @@ stats.py
 By default, compute statistics from the observed dataset. If imported,
 computes statistics from simulated datasets.
 
-Requires: windows.yml, windows/*
-Generates: obs.txt (unless imported)
+* Requires: windows.yml, windows/*
+* Generates: obs.txt (unless imported)
 
 simul.py
 --------
@@ -35,8 +35,8 @@ simul.py
 Run simulations according to several models. If imported, expose models
 and prior generators. Models are hardcoded in the file.
 
-Requires: stats.py, windows.yml, windows/*
-Generates: simuls/* (unless imported)
+* Requires: stats.py, windows.yml, windows/*
+* Generates: simuls/* (unless imported)
 
 priors.py
 ---------
@@ -45,8 +45,8 @@ Performs a few samples from each model to represent the prior
 distribution of parameters (without any bias). Models are hardcoded in
 the file.
 
-Requires: simul.py
-Generates: priors/*
+* Requires: simul.py
+* Generates: priors/*
 
 clean.py
 --------
@@ -62,16 +62,16 @@ Perform prior distribution of parameters (after filtering for replicates
 with e.g. no polymorphic sites), and distribution of statistics. Process
 all models defined in params.yml.
 
-Requires: simul.py, simuls/*, obs.txt
-Generates: plots/*
+* Requires: simul.py, simuls/*, obs.txt
+* Generates: plots/*
 
 lda.py
 ------
 
 Generate a LDA plot. Process all models defined in params.yml.
 
-Requires: simuls/*, obs.txt
-Generates: lda.png
+* Requires: simuls/*, obs.txt
+* Generates: lda.png
 
 abcranger.py
 ------------
@@ -80,5 +80,5 @@ Perform model choice using a range of numbers of replicates (in order to
 assess robustness of answer), and parameter estimation using the best
 model at the last number of replicates.
 
-Requires: simuls/*, obs.txt
-Generates: abcranger.res
+* Requires: simuls/*, obs.txt
+* Generates: abcranger.res

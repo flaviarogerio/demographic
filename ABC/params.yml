@@ -25,8 +25,8 @@ windows:
     min_sites: 5
 simul:
     nthreads: 40
-    nbatch: 50
-    szbatch: 10000
+    nbatch: 200
+    szbatch: 1000
     thin: 100
 priors:
     nr: 10000

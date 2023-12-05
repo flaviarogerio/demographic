@@ -13,33 +13,41 @@ import egglib, lzmp, math, stats, re, random, pathlib, yaml
 with open('params.yml') as f:
     cfg = yaml.load(f, yaml.Loader)
 
+models = {} # models are stored in a code-index dictionary
+
 # main function
 def main():
+    """
+    Run the specified list of models
+    """
+
     pool = lzmp.Pool(max_threads=cfg['simul']['nthreads'])
-    seed = egglib.random.get_seed()
-    models = [Model31, Model32, Model33, Model34, Model35, Model36,
-              Model37, Model38, Model39, Model3A, Model3B, Model3C,
-              Model3D]
+    seed = egglib.random.get_seed() # master seed
+    mlist = ['M40', 'M41', 'M44'] # list if models
     t = 0
     c = 0
-    pathlib.Path('simuls').mkdir(exist_ok=True)
+
+    pathlib.Path('simuls').mkdir(exist_ok=True) # ensures the output dir exists
     for rep in range(cfg['simul']['nbatch']):
-        for M in models:
-            tp = M()
+        for name in mlist:
             t += 1
-            stem = f'simuls/{tp.name}-{rep+1:03d}'
+            stem = f'simuls/{name}-{rep+1:03d}'
             p = pathlib.Path(stem + '_p.txt')
-            if not p.is_file():
+            if not p.is_file(): # doesn't run a chunk that has been started
                 seed += 1
-                m = M()
+                m = models[name](name) # create an instance of model
                 pool.add(m.job, [(stem, cfg['simul']['szbatch'], seed)])
                 print(stem)
                 c += 1
     print(f'total: {t} - to do: {c}')
     pool.run(shuffle=False)
 
-# functions to draw parameters from priors (in a class just for cosmetic)
 class Priors:
+    """
+    class holding functions to draw parameters from priors (as a class
+    just for cosmetic)
+    """
+
     def __init__(self):
         raise AttributeError('instanciation not available')
 
@@ -61,8 +69,10 @@ class Priors:
     def lognormal_draw(mean, stdev):
         return math.exp(egglib.random.normal()*stdev + mean)
 
-# helper function to remove sites based on MAF
 def maf(aln):
+    """
+    helper function to remove sites based on MAF
+    """
     keep = []
     for i in range(aln.ls):
         site = aln.column(i)
@@ -70,10 +80,15 @@ def maf(aln):
             keep.append(i)
     return aln.extract(keep)
 
-# base of simulating classes
 class Model:
-    def __init__(self):
-        # get number of windows, number of sites, and missing data rates
+    """
+    base of simulating classes
+    """
+    def __init__(self, name):
+        """
+        get number of windows, number of sites, and missing data rates
+        """
+        self.name = name
         with open('windows.yml') as f:
             wins = yaml.load(f, yaml.Loader)
         self.nwindows = wins['windows'][5]['num']
@@ -83,8 +98,14 @@ class Model:
             with open(f'windows/infos/{i+1:>03}.txt') as f:
                 self.L[i] = int(re.match('LG=contig_\d+ first=\d+ last=\d+ L=(\d+)', f.readline()).group(1))
                 self.miss[i] = list(map(float, f))
+        self.setup()
+        self.set_events()
 
     def job(self, dest, num, seed):
+        """
+        run one simulation, making use of functions defined in
+        subclasses
+        """
         egglib.random.set_seed(seed)
         struct = egglib.struct_from_samplesizes([cfg['N_NA'], cfg['N_BR'], cfg['N_EU']], outgroup=1)
         cstats = stats.Cstats()
@@ -148,10 +169,37 @@ class Model:
                         f1.write(' '.join(map(str, (self.params[k] for k in keys_p))) + '\n')
                         f2.write(' '.join(map(str, (res[k] for k in keys_s))) + '\n')
 
-# intermediate base
+    def setup(self):
+        """
+        setup model (must be defined in subclasses)
+        """
+        raise NotImplemented
+
+    def set_events(self):
+        """
+        setup event order (must be defined in subclasses)
+        """
+        raise NotImplemented
+
+    def draw(self):
+        """
+        draw parameters (must be defined in subclasses)
+        """
+        raise NotImplemented
+
+    def update(self):
+        """
+        apply parameters (must be defined in subclasses)
+        """
+        raise NotImplemented
+
 class ThreePop(Model):
-    def __init__(self):
-        super().__init__()
+    """
+    intermediate base class for models with three pop (no ghost
+    Mesoamerica population)
+    """
+
+    def setup(self):
         self.coal = egglib.coalesce.Simulator(num_pop=3, num_chrom=[cfg['N_NA'], cfg['N_BR'], cfg['N_EU']], num_mut=0)
 
     def draw(self):
@@ -185,119 +233,153 @@ class ThreePop(Model):
         self.coal.params['events'].update(2, T=self.params['T1']+self.params['T2']+2e-6, S=self.params['S2'])
         self.coal.params['events'].update(3, T=self.params['T1']+self.params['T2']+3e-6)
 
-# models
-class Model31(ThreePop): # [past] EU->NA, EU->BR [present]
-    def __init__(self):
-        self.name = 'M31'
-        super().__init__()
+class M(ThreePop):
+    """
+    EU-->NA
+      -->BR
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=2)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=2)
+models['M31'] = M
 
-class Model3B(ThreePop): # [past] EU->BR, EU->NA [present]
-    def __init__(self):
-        self.name = 'M3B'
-        super().__init__()
+class M(ThreePop):
+    """
+    EU-->BR
+      -->NA
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=2)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=2)
+models['M3B'] = M
 
-class Model32(ThreePop): # [past] NA->EU, NA->BR [present]
-    def __init__(self):
-        self.name = 'M32'
-        super().__init__()
+class M(ThreePop):
+    """
+    NA-->EU
+      -->BR
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=0)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=0)
+models['M32'] = M
 
-class Model33(ThreePop): # [past] NA->BR, NA->EU [present]
-    def __init__(self):
-        self.name = 'M33'
-        super().__init__()
+class M(ThreePop):
+    """
+    NA-->BR
+      -->EU
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=0)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=0)
+models['M33'] = M
 
-class Model34(ThreePop): # [past] BR->NA, BR->EU [present]
-    def __init__(self):
-        super().__init__()
-        self.name = 'M34'
+class M(ThreePop):
+    """
+    BR-->NA
+      -->EU
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=1)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=1)
+models['M34'] = M
 
-class Model3C(ThreePop): # [past] BR->EU, BR->NA [present]
-    def __init__(self):
-        super().__init__()
-        self.name = 'M3C'
+class M(ThreePop):
+    """
+    BR-->EU
+      -->NA
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=1)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=1)
+models['M3C'] = M
 
-class Model35(ThreePop): # NA->EU->BR
-    def __init__(self):
-        super().__init__()
-        self.name = 'M35'
+class M(ThreePop):
+    """
+    NA --> EU --> BR
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=2)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=0)
+models['M35'] = M
 
-class Model36(ThreePop): # NA->BR->EU
-    def __init__(self):
-        super().__init__()
-        self.name = 'M36'
+class M(ThreePop):
+    """
+    NA --> BR --> EU
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=1)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=0)
+models['M36'] = M
 
-class Model37(ThreePop): # EU->NA->BR
-    def __init__(self):
-        super().__init__()
-        self.name = 'M37'
+class M(ThreePop):
+    """
+    EU --> NA --> BR
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=0)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=2)
+models['M37'] = M
 
-class Model38(ThreePop): # EU->BR->NA
-    def __init__(self):
-        super().__init__()
-        self.name = 'M38'
+class M(ThreePop):
+    """
+    EU --> BR --> NA
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=1)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=2)
+models['M38'] = M
 
-class Model39(ThreePop): # BR->NA->EU
-    def __init__(self):
-        super().__init__()
-        self.name = 'M39'
+class M(ThreePop):
+    """
+    BR --> NA --> EU
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=0)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=1)
+models['M39'] = M
 
-class Model3A(ThreePop): # BR->EU->NA
-    def __init__(self):
-        super().__init__()
-        self.name = 'M3A'
+class M(ThreePop):
+    """
+    BR --> EU --> NA
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=2)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=1)
+models['M3A'] = M
 
-class Model3D(ThreePop): # simultaneous split
-    def __init__(self):
-        super().__init__()
-        self.name = 'M3D'
+class M(ThreePop):
+    """
+    ANC
+     -->NA
+     -->BR
+     -->EU
+    simultaneous split
+    """
+    def set_events(self):
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
         self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
@@ -322,6 +404,110 @@ class Model3D(ThreePop): # simultaneous split
         self.coal.params['events'].update(3, T=self.params['T1']+1e-6)
         self.coal.params['events'].update(4, T=self.params['T1']+1e-6)
         self.coal.params['events'].update(5, T=self.params['T1']+1e-6, N=self.params['N_ANC'])
+models['M3D'] = M
 
+class FourPop(Model):
+    """
+    intermediate base class for models with pop pop (with a ghost
+    population representing Mesoamerica)
+    """
+
+    def setup(self):
+        self.coal = egglib.coalesce.Simulator(num_pop=4, num_chrom=[cfg['N_NA'], cfg['N_BR'], cfg['N_EU'], 0], num_mut=0)
+
+    def draw(self):
+        self.params = {
+            'theta': Priors.loguniform_draw(0.00001, 0.001),
+            'rho': Priors.loguniform_draw(0.00001, 0.001),
+            'N_NA': Priors.normal_draw(1, 1, 0.25, 4),
+            'N_BR': Priors.normal_draw(1, 1, 0.25, 4),
+            'N_EU': Priors.normal_draw(1, 1, 0.25, 4),
+            'T1': Priors.normal_draw(0.1, 0.2, 0, 1),
+            'T2': Priors.normal_draw(0.1, 0.1, 0, 1),
+            'T3': Priors.normal_draw(0.1, 0.1, 0, 1),
+            'S1': Priors.normal_draw(0.1, 0.3, 0, 1),
+            'S2': Priors.normal_draw(0.1, 0.3, 0, 1),
+            'S3': Priors.normal_draw(0.1, 0.3, 0, 1),
+            'M_MA_NA': Priors.normal_draw(0.1, 0.2, 0, 1.5),
+            'M_NA_MA': Priors.normal_draw(0.1, 0.2, 0, 1.5),
+            'M_MA_BR': Priors.normal_draw(0.1, 0.2, 0, 1.5),
+            'M_BR_MA': Priors.normal_draw(0.1, 0.2, 0, 1.5),
+            'M_NA_EU': Priors.normal_draw(0.1, 0.2, 0, 1.5),
+            'M_EU_NA': Priors.normal_draw(0.1, 0.2, 0, 1.5),
+            'M_BR_EU': Priors.normal_draw(0.1, 0.2, 0, 1.5),
+            'M_EU_BR': Priors.normal_draw(0.1, 0.2, 0, 1.5),
+            'm': Priors.normal_draw(0.1, 0.2, 0, 1)
+        }
+
+    def update(self):
+        self.coal.params['N'] = [self.params['N_NA'], self.params['N_BR'], self.params['N_EU'], 1]
+        self.coal.params['migr_matrix'] = [[None, 0, self.params['M_NA_EU'], self.params['M_NA_MA']],
+                                           [0, None, self.params['M_BR_EU'], self.params['M_BR_MA']],
+                                           [self.params['M_EU_NA'], self.params['M_EU_BR'], None, 0],
+                                           [self.params['M_MA_NA'], self.params['M_MA_BR'], 0, None]]
+        self.coal.params['events'].update(0, T=self.params['T1'], S=self.params['S1'])
+        self.coal.params['events'].update(1, T=self.params['T1']+1e-6)
+        self.coal.params['events'].update(2, T=self.params['T1']+self.params['T2']+2e-6, S=self.params['S2'])
+        self.coal.params['events'].update(3, T=self.params['T1']+self.params['T2']+3e-6)
+        self.coal.params['events'].update(4, T=self.params['T1']+self.params['T2']+self.params['T3']+4e-6, S=self.params['S3'])
+        self.coal.params['events'].update(5, T=self.params['T1']+self.params['T2']+self.params['T3']+5e-6)
+
+class M(FourPop):
+    """
+    MA
+     -->NA
+     -->BR
+     -->EU
+    """
+    def set_events(self):
+        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('merge', T=0, src=0, dst=3)
+        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
+        self.coal.params.add_event('merge', T=0, src=1, dst=3)
+        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('merge', T=0, src=2, dst=3)
+
+    def draw(self):
+        super().draw()
+        self.params['T2'] = 0
+        self.params['T3'] = 0
+models['M40'] = M
+
+class M(FourPop):
+    """
+    MA-->NA
+      ---->BR
+      ------>EU
+    """
+    def set_events(self):
+        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('merge', T=0, src=0, dst=3)
+        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
+        self.coal.params.add_event('merge', T=0, src=1, dst=3)
+        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('merge', T=0, src=2, dst=3)
+
+    def draw(self):
+        super().draw()
+        self.params['T2'] = 0
+        self.params['T3'] = 0
+models['M41'] = M
+
+class M(FourPop):
+    """
+    MA-->NA-->BR
+           ---->EU
+    """
+    def set_events(self):
+        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('merge', T=0, src=2, dst=0)
+        self.coal.params.add_event('bottleneck', T=0, S=0, idx=3)
+        self.coal.params.add_event('merge', T=0, src=1, dst=0)
+        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('merge', T=0, src=0, dst=3)
+models['M44'] = M
+
+
+del M
 if __name__ == '__main__':
     main()
