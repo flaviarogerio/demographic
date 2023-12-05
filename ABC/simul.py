@@ -1,3 +1,12 @@
+"""
+Perform simulation conditioned on the windows structure according to
+prior generators and models defined hereafter. The observed set of
+statistics is used to get the list of stats. For each chunk of
+simulations and for each model, two files are populated: one with the
+values of parameters (defined by the model) and one with the values of
+statistics.
+"""
+
 import egglib, lzmp, math, stats, re, random, pathlib, yaml
 
 # load configuration

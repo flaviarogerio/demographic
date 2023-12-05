@@ -22,6 +22,7 @@ models:
 windows:
     max_dist: 10000
     max_width: 10000
+    min_sites: 5
 simul:
     nthreads: 40
     nbatch: 50

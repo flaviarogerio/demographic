@@ -1,16 +1,16 @@
 """
-Process the VCF file to compute observed values of statistics
+Process the VCF file to compute observed values of statistics. The
+script can be imported to be used on simulated data sets. See the
+comments of the Cstats class. Alternatively, it can be run to compute
+statistics from the observed data sets (through the main() function
+which is called if the script isn't imported. In that case. the observed
+statistics go to obs.txt.
 """
 
 import pathlib, egglib, sys, re, yaml
 
 with open('params.yml') as f:
     cfg = yaml.load(f, yaml.Loader)
-
-# configurable parameters
-N_NA = 46
-N_BR = 20
-N_EU = 141
 
 # main function
 def main():

@@ -9,7 +9,8 @@ draws = {}
 for model in [simul.Model31, simul.Model32, simul.Model33,
               simul.Model34, simul.Model35, simul.Model36,
               simul.Model37, simul.Model38, simul.Model39,
-              simul.Model3A, simul.Model3B, simul.Model3C]:
+              simul.Model3A, simul.Model3B, simul.Model3C,
+              simul.Model3D]:
     m = model()
     print(m.name)
     m.draw()
@@ -25,10 +26,11 @@ for p in pars:
     mini = 0
     maxi = 0
     for draw in draws.values():
-        if min(draw[p]) < mini: mini = min(draw[p])
-        if max(draw[p]) > maxi: maxi = max(draw[p])
+        if p in draw and min(draw[p]) < mini: mini = min(draw[p])
+        if p in draw and max(draw[p]) > maxi: maxi = max(draw[p])
     for mod, col in cfg['models'].items():
-        pyplot.hist(draws[mod][p], bins=cfg['priors']['nbins'], histtype='step', color=col, label=mod, range=(mini, maxi))
+        if p in draws[mod]:
+            pyplot.hist(draws[mod][p], bins=cfg['priors']['nbins'], histtype='step', color=col, label=mod, range=(mini, maxi))
     pyplot.xlabel(p)
     pyplot.legend()
     pyplot.savefig(f'priors/{p}.png')
