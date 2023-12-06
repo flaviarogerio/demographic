@@ -2,13 +2,29 @@ import pathlib, numpy, sklearn.discriminant_analysis
 from matplotlib import pyplot
 import yaml
 
-with open('params.yml') as f:
-    cfg = yaml.load(f, yaml.Loader)
-models = cfg['models']
-
 src = 'simuls'
 dst = 'lda.png'
 
+with open('params.yml') as f:
+    cfg = yaml.load(f, yaml.Loader)
+
+models = cfg['lda']['models']
+if len(models) == 0:
+    import simul
+    models = sorted(simul.models)
+else:
+    assert len(models) == len(set(models))
+    assert len(models) > 2
+
+# get user-specified plot structure
+plan = cfg['lda']['struct']
+nrow = len(plan)
+ncol = set(map(len, plan))
+assert len(ncol) == 1
+ncol = ncol.pop()
+print(nrow, ncol)
+
+# import data
 stats = []
 mods = []
 
@@ -41,15 +57,16 @@ for i, mod in enumerate(models):
 
 X = numpy.array(stats)
 y = numpy.array(mods)
-counts = [mods.count(i+1) for i in range(len(models))]
+
+counts = {mod: mods.count(i+1) for i,mod in enumerate(models)}
 print(counts)
 
 lda = sklearn.discriminant_analysis.LinearDiscriminantAnalysis()
 lda.fit(X, y)
 examples = []
 acc = 0
-for i in range(len(models)):
-    acc += counts[i]
+for mod in models:
+    acc += counts[mod]
     examples.append(stats[acc - 1])
 print(lda.predict(examples))
 
@@ -72,46 +89,34 @@ for s in obs_h:
 Xn = lda.transform(X)
 obs_proj = lda.transform([obs_v])
 
-fig, axes = pyplot.subplots(3, 2, figsize=(2*6.4, 3*4.8))
+fig, axes = pyplot.subplots(nrow, ncol, figsize=(ncol*6.4, nrow*4.8))
 
-acc = 0
-for (model, col), cnt in zip(models.items(), counts):
-    print(model, col, cnt)
-    axes[0][0].plot(Xn[acc:acc+cnt,0][::cfg['lda']['thin']], Xn[acc:acc+cnt,1][::cfg['lda']['thin']], mec=col, marker='o', mfc='None', ls='None')
-    axes[0][1].plot(Xn[acc:acc+cnt,2][::cfg['lda']['thin']], Xn[acc:acc+cnt,3][::cfg['lda']['thin']], mec=col, marker='o', mfc='None', ls='None')
-    axes[1][0].plot(Xn[acc:acc+cnt,4][::cfg['lda']['thin']], Xn[acc:acc+cnt,5][::cfg['lda']['thin']], mec=col, marker='o', mfc='None', ls='None')
-    axes[1][1].plot(Xn[acc:acc+cnt,6][::cfg['lda']['thin']], Xn[acc:acc+cnt,7][::cfg['lda']['thin']], mec=col, marker='o', mfc='None', ls='None')
-    axes[2][0].plot(Xn[acc:acc+cnt,8][::cfg['lda']['thin']], Xn[acc:acc+cnt,9][::cfg['lda']['thin']], mec=col, marker='o', mfc='None', ls='None')
-    axes[2][1].plot(Xn[acc:acc+cnt,8][::cfg['lda']['thin']], Xn[acc:acc+cnt,10][::cfg['lda']['thin']], mec=col, marker='o', mfc='None', ls='None')
-    acc += cnt
-axes[2][1].set_visible(0)
-axes[0][0].plot([obs_proj[0,0]], [obs_proj[0,1]], 'k*', ms=10, label='obs')
-axes[0][1].plot([obs_proj[0,2]], [obs_proj[0,3]], 'k*', ms=10, label='obs')
-axes[1][0].plot([obs_proj[0,4]], [obs_proj[0,5]], 'k*', ms=10, label='obs')
-axes[1][1].plot([obs_proj[0,6]], [obs_proj[0,7]], 'k*', ms=10, label='obs')
-axes[2][0].plot([obs_proj[0,8]], [obs_proj[0,9]], 'k*', ms=10, label='obs')
-axes[2][1].plot([obs_proj[0,8]], [obs_proj[0,10]], 'k*', ms=10, label='obs')
-axes[0][0].set_xlabel('Axis 1')
-axes[0][0].set_ylabel('Axis 2')
-axes[0][1].set_xlabel('Axis 3')
-axes[0][1].set_ylabel('Axis 4')
-axes[1][0].set_xlabel('Axis 5')
-axes[1][0].set_ylabel('Axis 6')
-axes[1][1].set_xlabel('Axis 7')
-axes[1][1].set_ylabel('Axis 8')
-axes[2][0].set_xlabel('Axis 8')
-axes[2][0].set_ylabel('Axis 9')
-axes[2][1].set_xlabel('Axis 8')
-axes[2][1].set_ylabel('Axis 10')
+for i in range(nrow):
+    for j in range(ncol):
+        if  plan[i][j] == 0:
+            axes[i][j].set_visible(False)
+        else:
+            d1, d2 = plan[i][j]
+            d1 -= 1
+            d2 -= 1
+            acc = 0
+            for mod in models:
+                col, symb = cfg['models'][mod]
+                cnt = counts[mod]
+                axes[i][j].plot(Xn[acc:acc+cnt,d1][::cfg['lda']['thin']],
+                                Xn[acc:acc+cnt,d2][::cfg['lda']['thin']],
+                                mec=col, marker=symb, mfc='None', ls='None')
+                acc += cnt
+                axes[i][j].set_xlabel(f'Dimension {d1+1}')
+                axes[i][j].set_ylabel(f'Dimension {d2+1}')
+                axes[i][j].axvline(0, ls='-', c='0.5', zorder=-100)
+                axes[i][j].axhline(0, ls='-', c='0.5', zorder=-100)
+            axes[i][j].plot([obs_proj[0,d1]], [obs_proj[0,d2]], 'k*', ms=10, label='obs')
 
-for row in axes:
-    for ax in row:
-        ax.axvline(0, ls='-', c='0.5', zorder=-100)
-        ax.axhline(0, ls='-', c='0.5', zorder=-100)
-
-for (model, col) in models.items():
-    axes[2][0].plot([], [], mec=col, marker='s', mfc=col, ls='None', label=model)
-axes[2][0].legend()
+for mod in models:
+    col, symb = cfg['models'][mod]
+    axes[0][-1].plot([], [], mec=col, marker=symb, mfc='None', ls='None', label=mod)
+axes[0][-1].legend(bbox_to_anchor=(1,1))
 
 fig.suptitle('Linear Discriminant Analysis')
 

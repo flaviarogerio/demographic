@@ -6,19 +6,22 @@ N_BR: 20
 N_EU: 141
 MAF: 0.05
 models:
-    M31: indianred
-    M32: red
-    M33: coral
-    M34: salmon
-    M35: sienna
-    M36: darkorange
-    M37: gold
-    M38: chartreuse
-    M39: palegreen
-    M3A: seagreen
-    M3B: cyan
-    M3C: deepskyblue
-    M3D: gray
+    M31: [red, o]
+    M3B: [red, ^]
+    M32: [green, o]
+    M33: [green, ^]
+    M34: [blue, o]
+    M3C: [blue, ^]
+    M35: [green, s]
+    M36: [green, v]
+    M37: [red, s]
+    M38: [red, v]
+    M39: [blue, s]
+    M3A: [blue, v]
+    M3D: [gray, o]
+    M40: [gray, s]
+    M41: [deepskyblue, o]
+    M44: [deepskyblue, s]
 windows:
     max_dist: 10000
     max_width: 10000
@@ -32,11 +35,26 @@ priors:
     nr: 10000
     nbins: 30
 plot:
-    maxi: 100000
+    maxi: 10000
     nbins: 50
 lda:
-    maxi: 50000
-    thin: 500
+    maxi: 100000
+    thin: 1000
+    models: [M31, M3B, M32, M33, M34, M3C, M35, M36,
+             M37, M38, M39, M3A, M3D, M40, M41, M44]
+    struct: [[[1,2], [3,4], [5,6]],
+             [[7,8], [9,10], [11,12]],
+             [[13,14], [14,15], 0]]
+        # a matrix with rows=rows of the picture
+        # columns=columns of the picture
+        # item: 2-item list giving the dimensions to use for that plot
+        # or 0 for disabling the plot
 ranger:
+    nthreads: 8
+    lim: [100000]
+post:
+    nbatch: 100
+    szbatch: 100
+    thin: 10
     nthreads: 40
-    lim: [100000, 200000, 300000, 400000, 500000]
+    nbins: 100

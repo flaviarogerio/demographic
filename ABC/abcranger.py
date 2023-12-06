@@ -181,7 +181,7 @@ out.write('### model choice table ###\n\nmax simulations model\n')
 for lim, m in model_choice:
     out.write(f'{lim:>15} {m}\n')
 
-out.write('\n### parameter estimation table ###\n\nparameter\texpectation\tmedia\tQ_0.05\tQ_0.95\tvariance\n')
+out.write('\n### parameter estimation table ###\n\nparameter\texpectation\tmedian\tQ_0.05\tQ_0.95\tvariance\n')
 for param in params_names:
     res = estimated_params[param]
     out.write(f'{param}\t{res["Expectation"]}\t{res["Median"]}\t{res["Quantile_0.05"]}\t{res["Quantile_0.95"]}\t{res["Variance"]}\n')

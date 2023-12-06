@@ -3,18 +3,18 @@ import pathlib, simul, yaml
 
 with open('params.yml') as f:
     cfg = yaml.load(f, yaml.Loader)
-models = cfg['models']
 
 pathlib.Path('plots').mkdir(exist_ok=True)
 src = 'simuls'
 dst = 'plots'
 
 # get list of params/stats
-m31 = simul.Model31()
-m31.draw()
-m3D = simul.Model3D()
-m3D.draw()
-keys_p = sorted(set(list(m31.params) + list(m3D.params)))
+keys_p = set()
+for M in simul.models.values():
+    m = M(None)
+    m.draw()
+    keys_p.update(m.params)
+keys_p = sorted(keys_p)
 obs = {}
 with open('obs.txt') as f:
     keys_s = []
@@ -24,12 +24,12 @@ with open('obs.txt') as f:
         obs[key] = float(v)
 
 # initialize tables
-data_p = {k: {m: [] for m in models} for k in keys_p}
-data_s = {k: {m: [] for m in models} for k in keys_s}
+data_p = {k: {m: [] for m in simul.models} for k in keys_p}
+data_s = {k: {m: [] for m in simul.models} for k in keys_s}
 
 # open all simulation files in directory simuls
 src = pathlib.Path(src)
-for model in models:
+for model in simul.models:
 
     # open all statistic files
     for fname in sorted(src.glob(f'{model}-*_s.txt')):
@@ -60,11 +60,14 @@ for model in models:
 for p in keys_p:
     mini = min(map(min, data_p[p].values()))
     maxi = max(map(max, data_p[p].values()))
-    print(p, format(mini, '.2f'), format(maxi, '.2f'), end=' ', flush=True)
-    for k, c in models.items():
-        if k not in data_p[p]: continue # skipping models without this param
-        print(k[-1], flush=True, end='')
-        pyplot.hist(data_p[p][k], bins=cfg['plot']['nbins'], histtype='step', color=c, label=k, range=(mini, maxi))
+    print(p, format(mini, '.2f'), format(maxi, '.2f'), end='', flush=True)
+    for mod in simul.models:
+        if mod not in data_p[p]: continue # skipping models without this param
+        print(' '+mod, flush=True, end='')
+        col, symb = cfg['models'][mod]
+        n, bins, patches = pyplot.hist(data_p[p][mod], bins=cfg['plot']['nbins'], histtype='step', color=col, range=(mini, maxi))
+        x = [(bins[i]+bins[i+1])/2 for i in range(len(n))]
+        pyplot.plot(x, n, marker=symb, mec=col, mfc='None', ls='None', label=mod)
     print()
     pyplot.xlabel(p)
     pyplot.legend()
@@ -75,10 +78,13 @@ tests = []
 for i, s in enumerate(keys_s):
     mini = min(map(min, data_s[s].values()))
     maxi = max(map(max, data_s[s].values()))
-    print(i+1, 'of', len(keys_s), s, format(mini, '.2f'), format(maxi, '.2f'), end=' ', flush=True)
-    for k, c in models.items():
-        print(k[-1], flush=True, end='')
-        pyplot.hist(data_s[s][k], bins=cfg['plot']['nbins'], histtype='step', color=c, label=k, range=(mini, maxi))
+    print(i+1, 'of', len(keys_s), s, format(mini, '.2f'), format(maxi, '.2f'), end='', flush=True)
+    for mod in simul.models:
+        print(' '+mod, flush=True, end='')
+        col, symb = cfg['models'][mod]
+        n, bins, patches = pyplot.hist(data_s[s][mod], bins=cfg['plot']['nbins'], histtype='step', color=col, range=(mini, maxi))
+        x = [(bins[i]+bins[i+1])/2 for i in range(len(n))]
+        pyplot.plot(x, n, marker=symb, mec=col, mfc='None', ls='None', label=mod)
     print()
     pyplot.axvline(obs[s], ls='-', c='r')
     pyplot.plot([], [], 'r-', label='obs')
@@ -86,7 +92,7 @@ for i, s in enumerate(keys_s):
     pyplot.legend()
     pyplot.savefig(f'{dst}/stat-{s}.png')
     pyplot.clf()
-    for m in models:
+    for m in simul.models:
         p1 = sum(obs[s] <= i for i in data_s[s][m])/len(data_s[s][m])
         p2 = sum(obs[s] >= i for i in data_s[s][m])/len(data_s[s][m])
         if p1 < 0.05: tests.append(f'{s} > {m} {p1:.2f}')

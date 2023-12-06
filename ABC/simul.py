@@ -36,7 +36,7 @@ def main():
             if not p.is_file(): # doesn't run a chunk that has been started
                 seed += 1
                 m = models[name](name) # create an instance of model
-                pool.add(m.job, [(stem, cfg['simul']['szbatch'], seed)])
+                pool.add(m.job, [(stem, cfg['simul']['szbatch'], cfg['simul']['thin'], seed)])
                 print(stem)
                 c += 1
     print(f'total: {t} - to do: {c}')
@@ -101,7 +101,7 @@ class Model:
         self.setup()
         self.set_events()
 
-    def job(self, dest, num, seed):
+    def job(self, dest, num, thin, seed):
         """
         run one simulation, making use of functions defined in
         subclasses
@@ -165,7 +165,7 @@ class Model:
                     res = cstats.compute()
                     if res:
                         c += 1
-                        if c%cfg['simul']['thin']==0: print(f'{dest}: {c}/{num}')
+                        if c%thin==0: print(f'{dest}: {c}/{num}')
                         f1.write(' '.join(map(str, (self.params[k] for k in keys_p))) + '\n')
                         f2.write(' '.join(map(str, (res[k] for k in keys_s))) + '\n')
 

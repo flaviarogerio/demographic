@@ -6,15 +6,11 @@ with open('params.yml') as f:
     cfg = yaml.load(f, yaml.Loader)
 
 draws = {}
-for model in [simul.Model31, simul.Model32, simul.Model33,
-              simul.Model34, simul.Model35, simul.Model36,
-              simul.Model37, simul.Model38, simul.Model39,
-              simul.Model3A, simul.Model3B, simul.Model3C,
-              simul.Model3D]:
-    m = model()
-    print(m.name)
+for name, Model in simul.models.items():
+    m = Model(name)
+    print(name)
     m.draw()
-    draws[m.name] = {k: [None] * cfg['priors']['nr'] for k in m.params}
+    draws[name] = {k: [None] * cfg['priors']['nr'] for k in m.params}
     for i in range(cfg['priors']['nr']):
         m.draw()
         for k in draws[m.name]: draws[m.name][k][i] = m.params[k]
@@ -28,9 +24,12 @@ for p in pars:
     for draw in draws.values():
         if p in draw and min(draw[p]) < mini: mini = min(draw[p])
         if p in draw and max(draw[p]) > maxi: maxi = max(draw[p])
-    for mod, col in cfg['models'].items():
+    for mod in draws:
+        col, symb = cfg['models'][mod]
         if p in draws[mod]:
-            pyplot.hist(draws[mod][p], bins=cfg['priors']['nbins'], histtype='step', color=col, label=mod, range=(mini, maxi))
+            n, bins, patches = pyplot.hist(draws[mod][p], bins=cfg['priors']['nbins'], histtype='step', color=col, range=(mini, maxi))
+            x = [(bins[i]+bins[i+1])/2 for i in range(len(n))]
+            pyplot.plot(x, n, marker=symb, mec=col, mfc='None', ls='None', label=mod)
     pyplot.xlabel(p)
     pyplot.legend()
     pyplot.savefig(f'priors/{p}.png')

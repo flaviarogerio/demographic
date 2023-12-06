@@ -41,9 +41,8 @@ and prior generators. Models are hardcoded in the file.
 priors.py
 ---------
 
-Performs a few samples from each model to represent the prior
-distribution of parameters (without any bias). Models are hardcoded in
-the file.
+Performs a few samples from each model found in the simul module to
+represent the prior distribution of parameters (without any bias).
 
 * Requires: simul.py
 * Generates: priors/*
@@ -55,23 +54,24 @@ Utility script that removes all pairs of output files which have less
 than the required number of simulations. All files in simuls/ are
 treated.
 
+lda.py
+------
+
+Generate a LDA plot. Process all models defined in params.yml. Include
+a given list of models if specified, all models found in simul
+otherwise.
+
+* Requires: simuls/*, obs.txt, simul.py if list of models not specified
+* Generates: lda.png
+
 plot.py
 -------
 
 Perform prior distribution of parameters (after filtering for replicates
-with e.g. no polymorphic sites), and distribution of statistics. Process
-all models defined in params.yml.
+with e.g. no polymorphic sites), and distribution of statistics. 
 
 * Requires: simul.py, simuls/*, obs.txt
 * Generates: plots/*
-
-lda.py
-------
-
-Generate a LDA plot. Process all models defined in params.yml.
-
-* Requires: simuls/*, obs.txt
-* Generates: lda.png
 
 abcranger.py
 ------------
