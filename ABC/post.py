@@ -32,8 +32,10 @@ with open('abcranger.res') as f:
     for line in f:
         if line.strip() == 'finished': break
         if line.strip() == '': break
-        par, expect, median, q005, q095, var = line.split()
-        pars[par] = float(expect), float(var)
+        par, expect, median, q5, q95, var = line.split()
+        pars[par] = {'e': float(expect), 'v': float(var),
+                     'q5': float(q5), 'q95': float(q95),
+                     'm': float(median)}
 
 # get observed stats
 obs = {}
@@ -48,8 +50,8 @@ class Model(cls):
     def draw(self):
         while True:
             self.params = {
-                p: random.normalvariate(e, math.sqrt(v))
-                    for p, (e, v) in pars.items()}
+                p: random.normalvariate(d['e'], math.sqrt(d['v']))
+                    for p, d in pars.items()}
             for v in self.params.values():
                 if v < 0: break
             else: break
@@ -58,14 +60,14 @@ class Model(cls):
 m = Model(mod)
 jobs = []
 for i in range(cfg['post']['nbatch']):
-    if not pathlib.Path(f'post/simuls{i+1}_s.txt').is_file():
-        jobs.append([f'post/simuls{i+1}', cfg['post']['szbatch'], cfg['post']['thin'], random.randint(1000000,9999999)])
+    if not pathlib.Path(f'post/simuls/simuls{i+1}_s.txt').is_file():
+        jobs.append([f'post/simuls/simuls{i+1}', cfg['post']['szbatch'], cfg['post']['thin'], random.randint(1000000,9999999)])
 lzmp.run(m.job, jobs, max_threads=cfg['post']['nthreads'], shuffle=False)
 
 # import results
 stats = {s: [] for s in obs}
 for i in range(cfg['post']['nbatch']):
-    with open(f'post/simuls{i+1}_s.txt') as f:
+    with open(f'post/simuls/simuls{i+1}_s.txt') as f:
         h =  f.readline().split()
         for line in f:
             line = line.split()
@@ -82,5 +84,31 @@ for stat in stats:
     ax.hist(x, bins=cfg['post']['nbins'], histtype='step', color='k', range=(min(x), max(x)))
     ax.set_xlabel(stat)
     ax.axvline(obs[stat], c='r')
-    fig.savefig(f'post/plot-{stat}.png')
+    fig.savefig(f'post/stats:plot-{stat}.png')
+    pyplot.close(fig)
+
+# get prior distribution of parameters
+m.draw()
+params = {p: [] for p in m.params}
+for fname in pathlib.Path('simuls/').glob(f'{mod}-*_p.txt'):
+    with open(fname) as f:
+        h = f.readline().split()
+        for line in f:
+            line = line.split()
+            d = dict(zip(h, line))
+            for p in params:
+                params[p].append(float(d[p]))
+
+# plot prior/posterior of parameters
+for p in params:
+    print('plotting', p)
+    fig, ax = pyplot.subplots()
+    ax.hist(params[p], bins=cfg['plot']['nbins'], histtype='step', color='k')
+    ax.set_xlabel(p)
+    ax.set_title(f'model {mod}')
+    ax.axvline(pars[p]['m'], c='r')
+    ax.axvline(pars[p]['q5'], c='r', ls=':')
+    ax.axvline(pars[p]['q95'], c='r', ls=':')
+    ax.axvline(pars[p]['e'], c='k')
+    fig.savefig(f'post/params:{p}.png')
     pyplot.close(fig)

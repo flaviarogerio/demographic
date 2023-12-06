@@ -82,3 +82,13 @@ model at the last number of replicates.
 
 * Requires: simuls/*, obs.txt
 * Generates: abcranger.res
+
+post.py
+-------
+
+Perform posterior simulations assuming the best model and parameter
+estimates (using a normal distribution without correlations) and plot
+statistics.
+
+* Requires: simuls.py, obs.txt, abcranger.res
+* Generates: post/*
