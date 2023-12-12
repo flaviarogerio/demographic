@@ -20,7 +20,7 @@ simul:
         m: [normal, 0.1, 0.2, 0, 1]
     overwrite: no                   # whether existing files should be overwritten (use non-0 with care)
     intercept: no                  # whether errors shouls be silently caught and saved in a file (applies to posterior simulations too)
-models:                            # specify a color and symbol for each model
+models:                            # specify a color and symbol for each model (or model grouping)
     M31: [indianred, o]
     M3B: [red, ^]
     M32: [greenyellow, o]
@@ -104,3 +104,4 @@ post:
     sim_sz: 250                     # number of simulations in each posterior batch
     sim_thin: 50                    # progress messages frequency
     sim_overwrite: no               # perform simulations even if output files are here
+    bins: 20                        # number of bins in statistics histograms

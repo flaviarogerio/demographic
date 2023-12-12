@@ -160,7 +160,7 @@ for model in cfg['post']['models']:
         print(f'plotting {model}:{stat}')
         x = sim_stats[stat]
         fig, ax = pyplot.subplots()
-        ax.hist(x, bins=20, histtype='step', color='k', range=(min(x), max(x)), label='simuls')
+        ax.hist(x, bins=cfg['post']['bins'], histtype='step', color='k', range=(min(x), max(x)), label='simuls')
         ax.set_xlabel(stat)
         ax.axvline(obs[stat], c='r', label='obs')
         ax.legend()
