@@ -5,6 +5,8 @@ This document lists the scripts and results in this directory and the
 order in which they should considered. More details are available as
 comments within each of the scripts.
 
+| file   | summary   |
+| -- | -- |
 | params.yml   | YAML-formatted configuration paramaters               |
 | windows.py   | Extracts sites from input VCF                         |
 | stats.py     | Compute statistics from observed/simulated data       |
