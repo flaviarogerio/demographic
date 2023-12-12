@@ -1,60 +1,106 @@
-fname: ../data/filtered_genotyped_combined_outgroup_208samples_pass_filter5_renamed.vcf
-samples: ../data/list_samples.yml
+fname: ../../data/filtered_genotyped_combined_outgroup_208samples_pass_filter5_renamed.vcf
+samples: ../../data/list_samples.yml
 outgroup: C_navitas
-N_NA: 46
-N_BR: 20
-N_EU: 141
-MAF: 0.05
-models:
-    M31: [red, o]
-    M3B: [red, ^]
-    M32: [green, o]
-    M33: [green, ^]
-    M34: [blue, o]
-    M3C: [blue, ^]
-    M35: [green, s]
-    M36: [green, v]
-    M37: [red, s]
-    M38: [red, v]
-    M39: [blue, s]
-    M3A: [blue, v]
-    M3D: [gray, o]
-    M40: [gray, s]
-    M41: [deepskyblue, o]
-    M44: [deepskyblue, s]
-windows:
-    max_dist: 10000
-    max_width: 10000
-    min_sites: 5
+maf: 0.05                           # minimal minor allele frequency
+nthreads: 40                        # maximum number of CPUs
+sites:
+    min_avail_prop: 0.5             # minimum proportion of non-missing samples per population
+    thin: 10                        # thinning factor: (thin-1) sites are ignored before including a site
 simul:
-    nthreads: 40
-    nbatch: 200
-    szbatch: 1000
-    thin: 100
+    models: []                      # choice of models to run (empty = all)
+    first_batch: 51                 # index of first batch (in principle: 1)
+    nbatch: 50                      # number of batches for parallelization
+    szbatch: 10000                  # size of each batch (replicates)
+    thin: 100                       # thin factor for progress monitoring
+    priors:                         # prior specifications (see priors in simul.py)
+        N: [normal, 1, 3, 0.1, 10]
+        T: [normal, 0.2, 0.5, 0, 1.5]
+        S: [normal, 0.5, 0.75, 0, 2]
+        M: [normal, 0.5, 0.5, 0, 2]
+        m: [normal, 0.1, 0.2, 0, 1]
+    overwrite: no                   # whether existing files should be overwritten (use non-0 with care)
+    intercept: no                  # whether errors shouls be silently caught and saved in a file (applies to posterior simulations too)
+models:                            # specify a color and symbol for each model
+    M31: [indianred, o]
+    M3B: [red, ^]
+    M32: [greenyellow, o]
+    M33: [yellowgreen, ^]
+    M34: [blue, o]
+    M3C: [aqua, ^]
+    M35: [lime, s]
+    M36: [limegreen, v]
+    M37: [orange, s]
+    M38: [gold, v]
+    M39: [turquoise, s]
+    M3A: [navy, v]
+    M3D: [gray, o]
+    M40: [lightgray, s]
+    M41: [blueviolet, o]
+    M44: [violet, s]
+    with: [magenta]
+    without: [blue]
+    NA: [green, o]
+    BR: [blue, o]
+    EU: [red, o]
 priors:
-    nr: 10000
-    nbins: 30
+    num: 10000                      # max number of draws from each parameter
+    bins: 20                        # number of bins in histograms
 plot:
-    maxi: 10000
-    nbins: 50
+    stop: 100000                    # stop using replicates when this number is reached
+    bins: 50                        # number of bins in histogram
 lda:
-    maxi: 100000
-    thin: 1000
-    models: [M31, M3B, M32, M33, M34, M3C, M35, M36,
-             M37, M38, M39, M3A, M3D, M40, M41, M44]
-    struct: [[[1,2], [3,4], [5,6]],
-             [[7,8], [9,10], [11,12]],
-             [[13,14], [14,15], 0]]
-        # a matrix with rows=rows of the picture
-        # columns=columns of the picture
-        # item: 2-item list giving the dimensions to use for that plot
-        # or 0 for disabling the plot
+    models: []                      # list of models to include (by default, all)
+    stop: 50000                     # stop using replicates when this number is reached
+    step: 100                       # thinning factor for plot
+    bins: 100                       # number of bins in histogram
+    struct:
+        - - [1,2]
+        - - [3,4]
+        - - [5,6]
+                                    # a matrix with rows=rows of the picture
+                                    # columns=columns of the picture
+                                    # item: 2-item list giving the dimensions to use for that plot
+                                    # or 0 for disabling the plot
+    pad: 1                          # pad between plots
 ranger:
-    nthreads: 8
-    lim: [100000]
+    nsam: 600000                    # required number of samples to import
+    modelchoice:
+        overwrite: no               # whether to overwrite previous analyses (can be overruled)
+        nsam: [600000]              # number of samples (can be overwritten)
+        analyses:                   # set of analyses to perform
+            default:                # a free name
+                nsam:               # overwrite numbers of sample
+                    - 100000
+                    - 200000
+                    - 300000
+                    - 400000
+                    - 500000
+                    - 600000
+                models: []          # list of models to consider (by default, use all)
+            origin:
+                groups:             # groups of models (as a list of [label, list of samples] items)
+                    - - EU
+                      - [M31, M3B, M37, M38]
+                    - - NA
+                      - [M32, M33, M35, M36, M41, M44]
+                    - - BR
+                      - [M34, M3C, M39, M3A]
+            unsampled:
+                groups:
+                    - - with
+                      - [M40, M41, M44, M3D]
+                    - - without
+                      - [M31, M3B, M37, M38,
+                         M32, M33, M35, M36,
+                         M34, M3C, M39, M3A]
+    estimparams:
+        overwrite: yes              # whether to overwrite previous results
+        models: [M33, M44]          # list of models to consider
 post:
-    nbatch: 100
-    szbatch: 100
-    thin: 10
-    nthreads: 40
-    nbins: 100
+    models: [M33, M44]              # models to process
+    prior: 10000                    # number of simulated points to import for prior
+    lda: 1000                       # number of points to import for LDA
+    sim_n: 40                       # number of posterior simulation batches
+    sim_sz: 250                     # number of simulations in each posterior batch
+    sim_thin: 50                    # progress messages frequency
+    sim_overwrite: no               # perform simulations even if output files are here

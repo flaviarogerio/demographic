@@ -1,102 +1,112 @@
+"""
+After simulations have been performed, create a plot for each parameter
+and each statistic with the histogram from every model.
+
+requires: obs.txt, simul.py, simuls/*
+generates: plots/*
+"""
+
 from matplotlib import pyplot
 import pathlib, simul, yaml
 
+# load configuration
 with open('params.yml') as f:
     cfg = yaml.load(f, yaml.Loader)
 
-pathlib.Path('plots').mkdir(exist_ok=True)
+# directories
 src = 'simuls'
 dst = 'plots'
 
-# get list of params/stats
-keys_p = set()
-for M in simul.models.values():
-    m = M(None)
-    m.draw()
-    keys_p.update(m.params)
-keys_p = sorted(keys_p)
-obs = {}
-with open('obs.txt') as f:
-    keys_s = []
-    for line in f:
-        key, v = line.split()
-        keys_s.append(key)
-        obs[key] = float(v)
+# output directory
+pathlib.Path(dst).mkdir(exist_ok=True)
 
-# initialize tables
-data_p = {k: {m: [] for m in simul.models} for k in keys_p}
-data_s = {k: {m: [] for m in simul.models} for k in keys_s}
+# get observed statistics
+with open('obs.txt') as f:
+    obs = {key: float(val) for (key, val) in map(str.split, f)}
+
+#  table for statistics
+data_s = {k: {m: [] for m in simul.model_names} for k in obs}
+
+# create table for parameters (by inspecting simul module)
+data_p = {}
+for model in simul.models_map.values():
+    print(model.__name__)
+    m = model()
+    for p in m.params:
+        if p not in data_p: data_p[p] = {}
+        data_p[p][model.__name__] = []
 
 # open all simulation files in directory simuls
 src = pathlib.Path(src)
-for model in simul.models:
+for model in simul.model_names:
+    n = 0
 
-    # open all statistic files
-    for fname in sorted(src.glob(f'{model}-*_s.txt')):
-        root = str(fname)[:-6] # identify root to locate parameter file
-        if len(data_p[keys_p[0]][model]) >= cfg['plot']['maxi']: continue
-        print(root) # feedback
-
-        # import statistics
+    # open all files
+    for fname in sorted(src.glob(f'{model}-*.txt')):
         with open(fname) as f:
-            assert f.readline().split() == keys_s
-            for line in f:
-                d = dict(zip(keys_s, map(float, line.split())))
-                for k in data_s: data_s[k][model].append(d[k])
-
-        # import parameters
-        with open(root+'_p.txt') as f:
             h = f.readline().split()
             for line in f:
-                d = dict(zip(h, line.split(), strict=True))
-                for k in d: data_p[k][model].append(float(d[k]))
-
-    # delete empty parameter lists
-    for p in data_p:
-        if len(data_p[p][model]) == 0:
-            del data_p[p][model]
+                line = line.split()
+                assert len(line) == len(h)
+                d = dict(zip(h, map(float, line)))
+                for s in data_s:
+                    data_s[s][model].append(d[s])
+                for p in data_p:
+                    if model in data_p[p]:
+                        data_p[p][model].append(d[p])
+                n += 1
+                if n >= cfg['plot']['stop']: break
+        if n >= cfg['plot']['stop']: break
+    if n == 0:
+        for p in data_p:
+            if model in data_p[p]:
+                del data_p[p][model]
+        for s in data_s:
+            del data_s[s][model]
+    print(model, n)
 
 # generate plots
-for p in keys_p:
+for p in data_p:
+    if len(data_p[p]) == 0: continue
     mini = min(map(min, data_p[p].values()))
     maxi = max(map(max, data_p[p].values()))
-    print(p, format(mini, '.2f'), format(maxi, '.2f'), end='', flush=True)
-    for mod in simul.models:
-        if mod not in data_p[p]: continue # skipping models without this param
-        print(' '+mod, flush=True, end='')
+    print(p, format(mini, '.2f'), format(maxi, '.2f'), end=' ', flush=True)
+    for mod in data_p[p]:
+        print(mod, flush=True, end='')
         col, symb = cfg['models'][mod]
-        n, bins, patches = pyplot.hist(data_p[p][mod], bins=cfg['plot']['nbins'], histtype='step', color=col, range=(mini, maxi))
-        x = [(bins[i]+bins[i+1])/2 for i in range(len(n))]
-        pyplot.plot(x, n, marker=symb, mec=col, mfc='None', ls='None', label=mod)
+        pyplot.hist(data_p[p][mod], bins=cfg['plot']['bins'], histtype='step', color=col, range=(mini, maxi), label=mod)
     print()
     pyplot.xlabel(p)
-    pyplot.legend()
-    pyplot.savefig(f'{dst}/param-{p}.png')
+    pyplot.legend(bbox_to_anchor=(1.2, 1))
+    pyplot.tight_layout()
+    pyplot.savefig(f'{dst}/param:{p}.png')
     pyplot.clf()
 
 tests = []
-for i, s in enumerate(keys_s):
+i = 0
+for s in data_s:
     mini = min(map(min, data_s[s].values()))
     maxi = max(map(max, data_s[s].values()))
-    print(i+1, 'of', len(keys_s), s, format(mini, '.2f'), format(maxi, '.2f'), end='', flush=True)
-    for mod in simul.models:
-        print(' '+mod, flush=True, end='')
-        col, symb = cfg['models'][mod]
-        n, bins, patches = pyplot.hist(data_s[s][mod], bins=cfg['plot']['nbins'], histtype='step', color=col, range=(mini, maxi))
-        x = [(bins[i]+bins[i+1])/2 for i in range(len(n))]
-        pyplot.plot(x, n, marker=symb, mec=col, mfc='None', ls='None', label=mod)
+    print(i:=i+1, 'of', len(data_s), s, format(mini, '.2f'), format(maxi, '.2f'), end=' ', flush=True)
+    for mod in simul.model_names:
+        if mod in data_s[s]:
+            print(mod, flush=True, end='')
+            col, symb = cfg['models'][mod]
+            pyplot.hist(data_s[s][mod], bins=cfg['plot']['bins'], histtype='step', color=col, range=(mini, maxi), label=mod)
     print()
-    pyplot.axvline(obs[s], ls='-', c='r')
-    pyplot.plot([], [], 'r-', label='obs')
+    pyplot.axvline(obs[s], ls=':', c='k')
+    pyplot.plot([], [], 'k:', label='obs')
     pyplot.xlabel(s)
-    pyplot.legend()
-    pyplot.savefig(f'{dst}/stat-{s}.png')
+    pyplot.legend(bbox_to_anchor=(1.2, 1))
+    pyplot.tight_layout()
+    pyplot.savefig(f'{dst}/stat:{s}.png')
     pyplot.clf()
-    for m in simul.models:
-        p1 = sum(obs[s] <= i for i in data_s[s][m])/len(data_s[s][m])
-        p2 = sum(obs[s] >= i for i in data_s[s][m])/len(data_s[s][m])
-        if p1 < 0.05: tests.append(f'{s} > {m} {p1:.2f}')
-        elif p2 < 0.05: tests.append(f'{s} < {m} {p2:.2f}')
+    for m in simul.model_names:
+        if m in data_s[s]:
+            p1 = sum(obs[s] <= i for i in data_s[s][m])/len(data_s[s][m])
+            p2 = sum(obs[s] >= i for i in data_s[s][m])/len(data_s[s][m])
+            if p1 < 0.05: tests.append(f'{s} > {m} {p1:.2f}')
+            elif p2 < 0.05: tests.append(f'{s} < {m} {p2:.2f}')
 
 print('significant excess:')
 for test in tests:

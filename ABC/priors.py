@@ -1,37 +1,43 @@
+"""
+This script is designed to generate plots for prior distributions.
+
+requires: simuls.py
+generates: priors/*
+"""
+
 from matplotlib import pyplot
 import simul, yaml, pathlib
 
+# ensure destination directory exists
 pathlib.Path('priors').mkdir(exist_ok=True)
+
+# load configuration
 with open('params.yml') as f:
     cfg = yaml.load(f, yaml.Loader)
 
+# performs draws from priors
 draws = {}
-for name, Model in simul.models.items():
-    m = Model(name)
-    print(name)
-    m.draw()
-    draws[name] = {k: [None] * cfg['priors']['nr'] for k in m.params}
-    for i in range(cfg['priors']['nr']):
-        m.draw()
-        for k in draws[m.name]: draws[m.name][k][i] = m.params[k]
+for mod, Model in simul.models_map.items():
+    print(mod)
+    m = Model()
+    for par, gen in m.params.items():
+        if type(gen).__name__ == 'Zero': continue
+        if par not in draws: draws[par] = {}
+        draws[par][mod] = [gen() for _ in range(cfg['priors']['num'])]
+        
 
-pars = set()
-for d in draws.values(): pars.update(d)
-for p in pars:
+# make histogram for each parameter
+for p in draws:
     print(p)
-    mini = 0
-    maxi = 0
-    for draw in draws.values():
-        if p in draw and min(draw[p]) < mini: mini = min(draw[p])
-        if p in draw and max(draw[p]) > maxi: maxi = max(draw[p])
-    for mod in draws:
+    mini = min(map(min, draws[p].values()))
+    maxi = max(map(max, draws[p].values()))
+    for mod in draws[p]:
         col, symb = cfg['models'][mod]
-        if p in draws[mod]:
-            n, bins, patches = pyplot.hist(draws[mod][p], bins=cfg['priors']['nbins'], histtype='step', color=col, range=(mini, maxi))
-            x = [(bins[i]+bins[i+1])/2 for i in range(len(n))]
-            pyplot.plot(x, n, marker=symb, mec=col, mfc='None', ls='None', label=mod)
+        pyplot.hist(draws[p][mod], bins=cfg['priors']['bins'],
+            histtype='step', color=col, range=(mini, maxi), label=mod)
     pyplot.xlabel(p)
-    pyplot.legend()
+    pyplot.legend(bbox_to_anchor=(1.2, 1))
+    pyplot.tight_layout()
     pyplot.savefig(f'priors/{p}.png')
     pyplot.clf()
 

@@ -1,191 +1,245 @@
-import pandas, numpy, pyabcranger, pathlib, yaml
-dst = 'abcranger.res'
+"""
+Perfom model choice and parameter fitting with the pyabcranger module.
 
-# import configuration files
+requires: simuls/*, obs.txt
+generates: ranger/*
+
+Structure of output dir:
+    - For each model choice directory:
+        - results.txt with model choice (model/group, num votes, post prob for each sample size)
+        - other files are output files of pyabcranger of the last sample size
+"""
+
+import pandas, numpy, pyabcranger, pathlib, yaml, simul
+
+##############################
+# import configuration files #
+##############################
+
+dst = pathlib.Path('ranger')
 with open('params.yml') as f:
     cfg = yaml.load(f, yaml.Loader)
-    models = list(cfg['models'])
+    models = simul.model_names
 with open('obs.txt') as f:
     obs = {}
     for line in f:
         k, v = line.split()
         assert k not in obs
         obs[k] = float(v)
+stats_names = list(obs)
+statobs = numpy.array([obs[i] for i in stats_names])
 
-# make a single, big pandas.DataFrame
+#####################################################
+# import all data in a single, big pandas.DataFrame #
+#####################################################
+
 df = []
 models_start = {}
-models_num = {}
+models_num = dict.fromkeys(models, 0)
 models_params = {}
-stats_names = None
 cur = 0
 for m in models:
-    files = sorted(pathlib.Path('simuls').glob(f'{m}-*_p.txt'))
+    files = sorted(pathlib.Path('simuls').glob(f'{m}-*.txt'))
     n = 0
+    models_start[m] = cur
     for fname in files:
-        t_params = pandas.read_table(fname, dtype=float, sep=' ')
-        t_stats = pandas.read_table(str(fname)[:-6]+'_s.txt', dtype=float, sep=' ')
-        bit = pandas.concat([t_params, t_stats], axis=1)
-        params = list(t_params.columns.values)
-        stats = list(t_stats.columns.values)
-        if m not in models_start:
-            models_start[m] = cur
-            models_num[m] = len(bit)
-            models_params[m] = params
-        else:
-            assert params == models_params[m]
-            models_num[m] += len(bit)
-        if stats_names is None:
-            stats_names = stats
-        else:
-            assert stats == stats_names
+        bit = pandas.read_table(fname, dtype=float, sep=' ')
+        models_num[m] += len(bit)
         df.append(bit)
         cur += len(bit)
         print(fname, models_num[m], cur)
-        if models_num[m] >= cfg['ranger']['lim'][-1]: break
-
+        if m not in models_params:
+            models_params[m] = set(bit.columns) - set(stats_names)
+        if models_num[m] >= cfg['ranger']['nsam']: break
+    if models_num[m] < cfg['ranger']['nsam']:
+        raise ValueError(f'not enough replicates available for model {m}')
 df = pandas.concat(df, axis=0, ignore_index=True)
 
-print('starts:', models_start)
-print('num:', models_num)
-print('num stats:', len(stats_names))
+# process list of parameters
 params_outer = set().union(* models_params.values())
 params_inner = list(params_outer.intersection(* models_params.values()))
 assert params_outer == set(df.columns) - set(stats_names)
 params_outer = list(params_outer)
-print('all params:', params_outer)
-print('common params:', params_inner)
-print('starts:', models_start)
-print('num:', models_num)
 
-out = open(dst, 'w')
-out.write(f'num stats: {len(stats_names)}\n')
-out.write(f'all params: ' + ' '.join(params_outer) + '\n')
-out.write('common params ' + ' '.join(params_inner) + '\n')
+################
+# model choice #
+################
 
-# process all subsets
-model_list = list(models)
-model_choice = []
-for lim in cfg['ranger']['lim']:
-    print('limit:', lim)
-    out.write(f'\n### max: {lim} ###\n\n')
+overwrite_default = cfg['ranger']['modelchoice']['overwrite']
+for key, config in cfg['ranger']['modelchoice']['analyses'].items():
 
-    # make df subset
-    nrecscen = []
-    rng = []
-    for m in model_list:
-        n = min(lim, models_num[m])
-        nrecscen.append(n)
-        rng.append((models_start[m], models_start[m]+n))
-    sub = pandas.concat([df[a:b] for (a,b) in rng], axis=0, ignore_index=True)
+    ### start a given analysis ###
+    ###############################
 
-    # extract stats / params tables
-    stats = sub[stats_names].values
-    params = sub[params_outer].values
-    np = len(params_outer)
+    # skip if exist and should not be overwritten, overwise create
+    path = dst / 'modelchoice' / key
+    if path.is_dir() and config.get('overwrite', overwrite_default) == False:
+        print(f'<<< {key} skipped >>>')
+        continue
+    path.mkdir(exist_ok=True, parents=True)
 
-    # import observed statistics
-    statobs = numpy.array([obs[i] for i in stats_names])
-    nrec = len(stats)
-    scenarios = [i+1.0 for i,n in enumerate(nrecscen) for _ in range(n)]
+    # get list of models
+    if 'models' in config and 'groups' in config:
+        raise ValueError('`models` and `groups` should not be used both at the same time')
+    if 'groups' in config:
+        model_list = []
+        group_mapping = {}
+        group2index = []
+        scen_list = []
+        for i, (grp, pops) in enumerate(config['groups']):
+            scen_list.append(grp)
+            model_list.extend(pops)
+            group_mapping.update(dict.fromkeys(pops, i + 1.0))
+            group2index.append([model_list.index(p) for p in pops])
+        assert len(model_list) == len(set(model_list))
+    else:
+        if config['models'] == []:
+            model_list = list(models)
+        else:
+            model_list = config['models']
+        group_mapping = None
+        scen_list = model_list
+
+    ### initialize output file ###
+    ##############################
+    fname = path / 'results.txt'
+    with (fname).open('w') as f:
+        f.write('repl. best ' + ' '.join(scen_list) + ' postp\n')
+
+    ### process all numbers of samples ###
+    ######################################
+    nsams = config.get('nsam', cfg['ranger']['modelchoice']['nsam'])
+    for nsam in nsams:
+        print(f'\n<<<<<< analysis {key} {nsam} >>>>>>\n')
+
+        ### subset of dataframe ###
+        ###########################
+        model_counts = []
+        rng = []
+        for m in model_list:
+            n = min(nsam, models_num[m])
+            rng.append((models_start[m], models_start[m]+n))
+            model_counts.append(n)
+        sub = pandas.concat([df[a:b] for (a,b) in rng], axis=0, ignore_index=True)
+
+        ### data tables ####
+        ####################
+        stats = sub[stats_names].values
+        params = sub[params_outer].values
+        np = len(params_outer)
+        nrec = len(stats)
+
+        ### scenarios (models or groups) ###
+        ####################################
+        assert len(model_counts) == len(model_list)
+        if group_mapping is None:
+            scenarios = [i+1.0 for i,n in enumerate(model_counts) for _ in range(n)]
+            nrecscen = model_counts
+        else:
+            scenarios = [group_mapping[model_list[i]] for i,n in enumerate(model_counts) for _ in range(n)]
+            nrecscen = [sum(model_counts[i] for i in grp) for grp in group2index]
+
+        ### create reference table ###
+        ##############################
+        rf = pyabcranger.reftable(
+            nrec,
+            nrecscen,
+            [np] * len(scen_list),
+            params_outer,
+            stats_names,
+            stats,
+            params,
+            scenarios
+        )
+
+        #### choose scenario  ###
+        #########################
+        postres = pyabcranger.modelchoice(rf, statobs, f"--ntree 500 --threads {cfg['nthreads']}", False)
+        scen_index = postres.predicted_model[0]
+        scenario = scen_index + 1
+        scen_name = scen_list[scen_index]
+        print('\n------> ' + scen_name + '\n')
+
+        ### export results ###
+        ######################
+        votes = ' '.join(map(str, postres.votes[0]))
+        postp = str(postres.post_proba[0])
+        with (fname).open('a') as f:
+            f.write(str(nsam))
+            f.write(' ' + scen_name)
+            f.write(' ' + votes)
+            f.write(' ' + format(float(postp), '.4f') + '\n')
+
+    ### save abcranger output files for last sample size ###
+    ########################################################
+    for ext in ['settings', 'importance', 'ooberror', 'confusion', 'lda', 'predictions']:
+        pathlib.Path('modelchoice_out.' + ext).rename(path / ext)
+
+########################
+# parameter estimation #
+########################
+
+### process requested models ###
+################################
+for model in cfg['ranger']['estimparams']['models']:
+
+    ### create reference table ###
+    ##############################
+
+    # parameters for this model
+    params_names = list(models_params[model])
+
+    # extract tables
+    a = models_start[model]
+    b = a + models_num[model]
+    params = df[params_names][a:b].values
+    stats = df[stats_names][a:b].values
+    nrec = len(params)
+    nrecscen = [nrec]
 
     # create reference table
-    print('making ref table...')
-    print('nrec:', nrec)
-    print('nrecscen:', nrecscen)
-    print('nparams:', [np] * len(models))
-    print('params:', len(params_outer))
-    print('stats:', len(stats_names))
-    print('stats:', stats.shape)
-    print('params:', len(params_outer))
-    print('scenarios:', len(scenarios))
-    print('observed:', len(statobs))
-
     rf = pyabcranger.reftable(
         nrec,
         nrecscen,
-        [np] * len(models),
-        params_outer,
+        [len(params_names)],
+        params_names,
         stats_names,
         stats,
         params,
-        scenarios
+        [1.0] * nrec
     )
 
-    # grow random forest
-    postres = pyabcranger.modelchoice(rf, statobs, f"--ntree 500 --threads {cfg['ranger']['nthreads']}", False)
+    # as before, skip/create destination directory
+    path = dst / 'estimparams' / model
+    if path.is_dir() and cfg['ranger']['estimparams']['overwrite'] == False:
+        print(f'<<< estimparams {model} skipped >>>')
+        continue
+    path.mkdir(exist_ok=True, parents=True)
+    out = path / 'results.txt'
+    with out.open('w') as f:
+        f.write('param\texpect.\tmedian\tQ_0.05\tQ_0.95\tvariance\n')
 
-    # pick up selected model
-    mod_index = postres.predicted_model[0]
-    selected_model = mod_index + 1
-    model_choice.append((lim, model_list[mod_index]))
+    ### process all parameters for this model ###
+    #############################################
+    ntot = len(params_names)
+    for ncur, param in enumerate(params_names):
+        print(f'\n<<<<<< {model} parameter {param} ({ncur+1} of {ntot}) >>>>>>\n')
 
-    # export
-    out.write(f'selected model: {models[postres.predicted_model[0]]}\n')
-    out.write('votes: ' + ' '.join(str(v) for v in postres.votes[0]) + '\n')
-    out.write(f'proba: {postres.post_proba[0]}\n')
-    for res in ['settings', 'importance' , 'predictions', 'confusion']:
-        p = pathlib.Path(f'modelchoice_out.{res}')
-        with open(p) as f:
-            out.write(f'\n# modelchoice_out.{res} #\n\n{f.read()}')
-        p.unlink()
-    for res in ['lda', 'ooberror']:
-        pathlib.Path(f'modelchoice_out.{res}').unlink()
-    out.flush()
+        ### run pyabcranger ###
+        #######################
+        param_dir = path / param
+        param_dir.mkdir(exist_ok=True)
+        cli_params = f"--ntree 500 --parameter {param} --threads {cfg['nthreads']} --noob 50 --chosenscen 1 --output {param_dir}/out"
 
-# select valid params for the selected model
-model = model_list[mod_index]
-params_names = models_params[model]
-np = len(params)
-
-# fit parameters on selected model
-a = models_start[model]
-b = a + models_num[model]
-params = df[params_names][a:b].values
-stats = df[stats_names][a:b].values
-nrec = len(params)
-nrecscen = [nrec]
-
-rf = pyabcranger.reftable(
-    nrec,
-    nrecscen,
-    [np],
-    params_names,
-    stats_names,
-    stats,
-    params,
-    [selected_model] * nrec
-)
-
-# process parameters
-estimated_params = {}
-for param in params_names:
-    print("Estimating parameter " + param)
-    out.write(f'### fit {param} ###\n')
-    cli_params = f"--ntree 500 --parameter {param} --threads {cfg['ranger']['nthreads']} --noob 50 --chosenscen {selected_model}"
-    res = pyabcranger.estimparam(rf, statobs, cli_params, False, False)
-    estimated_params[param] = res.point_estimates[0]
-
-    # export
-    for res in ['settings', 'importance' , 'predictions', 'oobstats']:
-        p = pathlib.Path(f'estimparam_out.{res}')
-        with open(p) as f:
-            out.write(f'\n# estimparam_out.{res} #\n\n{f.read()}')
-        p.unlink()
-    for res in ['predweights', 'plsweights', 'plsvar', 'ooberror']:
-        pathlib.Path(f'estimparam_out.{res}').unlink()
-    out.flush()
-
-# export final tables
-out.write('### model choice table ###\n\nmax simulations model\n')
-for lim, m in model_choice:
-    out.write(f'{lim:>15} {m}\n')
-
-out.write('\n### parameter estimation table ###\n\nparameter\texpectation\tmedian\tQ_0.05\tQ_0.95\tvariance\n')
-for param in params_names:
-    res = estimated_params[param]
-    out.write(f'{param}\t{res["Expectation"]}\t{res["Median"]}\t{res["Quantile_0.05"]}\t{res["Quantile_0.95"]}\t{res["Variance"]}\n')
-    out.flush()
-
-out.write('finished\n')
-out.close()
+        ### get results ###
+        ###################
+        res = pyabcranger.estimparam(rf, statobs, cli_params, False, False)
+        pe = res.point_estimates[0]
+        e = pe['Expectation']
+        m = pe['Median']
+        q5 = pe['Quantile_0.05']
+        q95 = pe['Quantile_0.95']
+        v = pe['Variance']
+        with out.open('a') as f:
+            f.write(f'{param}\t{e}\t{m}\t{q5}\t{q95}\t{v}\n')
+            f.flush()
