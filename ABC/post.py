@@ -215,7 +215,7 @@ def plot(ax, d1, d2, data):
         Z = krn(values)
         Z = numpy.reshape(krn(grid_pos).T, X.shape)
         ax.contour(X, Y, Z, colors=col, levels=3, zorder=5)
-    ax.plot(obs[d1], obs[d2], ls='None', mec='k', marker='*', mfc='w', label='obs', ms=10)
+    ax.plot(obs[d1], obs[d2], ls='None', mec='k', marker='*', mfc='w', label='obs', ms=10, zorder=10)
     ax.set_title(f'LDA {d1+1}-{d2+1} {sub.name}')
 
 path = pathlib.Path('ranger') / 'modelchoice'
@@ -301,5 +301,6 @@ for sub in path.iterdir():
             plot(axes[1], 2, 3, data)
             axes[0].legend(bbox_to_anchor=(1.1,1))
             fig.tight_layout()
+            print((post_path / sub.name).with_suffix('.png'))
             fig.savefig((post_path / sub.name).with_suffix('.png'))
             pyplot.close(fig)
