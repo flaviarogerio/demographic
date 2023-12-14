@@ -234,9 +234,9 @@ class M31(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
+        self.coal.params.add_event('bottleneck', T=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=2)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('bottleneck', T=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=2)
 
 class M3B(ThreePop):
@@ -246,9 +246,9 @@ class M3B(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('bottleneck', T=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=2)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
+        self.coal.params.add_event('bottleneck', T=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=2)
 
 class M32(ThreePop):
@@ -258,9 +258,9 @@ class M32(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
+        self.coal.params.add_event('bottleneck', T=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=0)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('bottleneck', T=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=0)
 
 class M33(ThreePop):
@@ -270,9 +270,9 @@ class M33(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('bottleneck', T=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=0)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
+        self.coal.params.add_event('bottleneck', T=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=0)
 
 class M34(ThreePop):
@@ -282,9 +282,9 @@ class M34(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('bottleneck', T=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=1)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('bottleneck', T=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=1)
 
 class M3C(ThreePop):
@@ -294,9 +294,9 @@ class M3C(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('bottleneck', T=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=1)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('bottleneck', T=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=1)
 
 class M35(ThreePop):
@@ -305,9 +305,9 @@ class M35(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
+        self.coal.params.add_event('bottleneck', T=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=2)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('bottleneck', T=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=0)
 
 class M36(ThreePop):
@@ -316,9 +316,9 @@ class M36(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('bottleneck', T=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=1)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
+        self.coal.params.add_event('bottleneck', T=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=0)
 
 class M37(ThreePop):
@@ -327,9 +327,9 @@ class M37(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
+        self.coal.params.add_event('bottleneck', T=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=0)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('bottleneck', T=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=2)
 
 class M38(ThreePop):
@@ -338,9 +338,9 @@ class M38(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('bottleneck', T=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=1)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
+        self.coal.params.add_event('bottleneck', T=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=2)
 
 class M39(ThreePop):
@@ -349,9 +349,9 @@ class M39(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('bottleneck', T=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=0)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('bottleneck', T=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=1)
 
 class M3A(ThreePop):
@@ -360,9 +360,9 @@ class M3A(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('bottleneck', T=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=2)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('bottleneck', T=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=1)
 
 class M3D(ThreePop):
@@ -375,9 +375,9 @@ class M3D(ThreePop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('bottleneck', T=0, idx=0)
+        self.coal.params.add_event('bottleneck', T=0, idx=1)
+        self.coal.params.add_event('bottleneck', T=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=1, dst=0)
         self.coal.params.add_event('merge', T=0, src=2, dst=0)
         self.coal.params.add_event('size', T=0, idx=0, N=1)
@@ -432,11 +432,17 @@ class FourPop(Model):
         }
 
     def update(self, pars):
+        self.update_migr(parse)
+        self.update_events(parse)
+
+    def update_migr(self, pars):
         self.coal.params['N'] = [pars['N_NA'], pars['N_BR'], pars['N_EU'], 1]
         self.coal.params['migr_matrix'] = [[None, pars['M_NA_BR'], pars['M_NA_EU'], pars['M_NA_MA']],
                                            [pars['M_BR_NA'], None, pars['M_BR_EU'], pars['M_BR_MA']],
                                            [pars['M_EU_NA'], pars['M_EU_BR'], None, pars['M_EU_MA']],
                                            [pars['M_MA_NA'], pars['M_MA_BR'], pars['M_MA_EU'], None]]
+
+    def update_events(self, pars):
         self.coal.params['events'].update(0, T=pars['T1'], S=pars['S1'])
         self.coal.params['events'].update(1, T=pars['T1']+1e-6)
         self.coal.params['events'].update(2, T=pars['T1']+pars['T2']+2e-6, S=pars['S2'])
@@ -446,36 +452,39 @@ class FourPop(Model):
 
 class M40(FourPop):
     """
-    MA
-     -->NA
-     -->BR
-     -->EU
+    simultaneous split from MA
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('bottleneck', T=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=3)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
+        self.coal.params.add_event('bottleneck', T=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=3)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('bottleneck', T=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=3)
         self.params['T2'] = Zero()
         self.params['T3'] = Zero()
 
 class M41(FourPop):
     """
-    MA-->NA
-      ---->BR
-      ------>EU
+    asynchronous split from MA (any order
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('bottleneck', T=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=3)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=1)
+        self.coal.params.add_event('bottleneck', T=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=3)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('bottleneck', T=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=3)
+
+    def update_events(self, pars):
+        self.coal.params['events'].update(0, T=pars['T1'], S=pars['S1'])
+        self.coal.params['events'].update(1, T=pars['T1']+1e-6)
+        self.coal.params['events'].update(2, T=pars['T2'], S=pars['S2'])
+        self.coal.params['events'].update(3, T=pars['T2']+1e-6)
+        self.coal.params['events'].update(4, T=pars['T3'], S=pars['S3'])
+        self.coal.params['events'].update(5, T=pars['T3']+1e-6)
 
 class M44(FourPop):
     """
@@ -484,12 +493,13 @@ class M44(FourPop):
     """
     def __init__(self):
         super().__init__()
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=2)
+        self.coal.params.add_event('bottleneck', T=0, idx=2)
         self.coal.params.add_event('merge', T=0, src=2, dst=0)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=3)
+        self.coal.params.add_event('bottleneck', T=0, idx=1)
         self.coal.params.add_event('merge', T=0, src=1, dst=0)
-        self.coal.params.add_event('bottleneck', T=0, S=0, idx=0)
+        self.coal.params.add_event('bottleneck', T=0, idx=0)
         self.coal.params.add_event('merge', T=0, src=0, dst=3)
+
 
 ########################################################################
 
