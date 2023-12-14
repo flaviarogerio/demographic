@@ -2,7 +2,7 @@ fname: ../../data/filtered_genotyped_combined_outgroup_208samples_pass_filter5_r
 samples: ../../data/list_samples.yml
 outgroup: C_navitas
 maf: 0.05                           # minimal minor allele frequency
-nthreads: 40                        # maximum number of CPUs
+nthreads: 50                        # maximum number of CPUs
 sites:
     min_avail_prop: 0.5             # minimum proportion of non-missing samples per population
     thin: 10                        # thinning factor: (thin-1) sites are ignored before including a site
@@ -93,8 +93,28 @@ ranger:
                       - [M31, M3B, M37, M38,
                          M32, M33, M35, M36,
                          M34, M3C, M39, M3A]
+            final:
+                nsam:
+                    - 100000
+                    - 200000
+                    - 300000
+                    - 400000
+                    - 500000
+                    - 600000
+                models: [M33, M44]
+            only-unsampled:
+                nsam:
+                    - 100000
+                    - 200000
+                    - 300000
+                    - 400000
+                    - 500000
+                    - 600000
+                models: [M31, M3B, M32, M33,
+                         M34, M3C, M35, M36,
+                         M37, M38, M39, M3A]
     estimparams:
-        overwrite: yes              # whether to overwrite previous results
+        overwrite: no               # whether to overwrite previous results
         models: [M33, M44]          # list of models to consider
 post:
     models: [M33, M44]              # models to process
