@@ -1,2 +1,0 @@
-repl. best with without postp
-600000 with 286 214 0.7352
