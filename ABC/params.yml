@@ -102,7 +102,7 @@ ranger:
                     - 500000
                     - 600000
                 models: [M33, M44]
-            only-unsampled:
+            without-unsampled-2:
                 nsam:
                     - 100000
                     - 200000
