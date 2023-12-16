@@ -36,10 +36,7 @@ for p in draws:
         pyplot.hist(draws[p][mod], bins=cfg['priors']['bins'],
             histtype='step', color=col, range=(mini, maxi), label=mod)
     pyplot.xlabel(p)
-    pyplot.legend(bbox_to_anchor=(1.2, 1))
+    pyplot.legend(bbox_to_anchor=(1.2, 1), ncols=2)
     pyplot.tight_layout()
     pyplot.savefig(f'priors/{p}.png')
     pyplot.clf()
-
-
-

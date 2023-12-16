@@ -9,6 +9,7 @@ import signal
 # get configuration
 with open('params.yml') as f:
     cfg = yaml.load(f, yaml.Loader)
+cachef = pathlib.Path('monitor.yml')
 
 # main function
 def monitor(delay, stop):
@@ -31,31 +32,59 @@ def monitor(delay, stop):
     else:
         models = cfg['simul']['models']
     path = pathlib.Path('simuls')
+
+    # enter iteration
     for it in range(stop):
-        print(f'[{it+1}/{stop}]')
-        res = subprocess.run(['wc', '-l'] + [str(p) for p in path.glob(f'*-*.txt')], stdout=subprocess.PIPE)
-        if res.returncode != 0:
-            break
-        counts = {m: [] for m in models}
-        for line in res.stdout.decode().split('\n'):
-            n, name = line.split()
-            if name == 'total': break
-            n = int(n) - 1
-            m = pathlib.Path(name).name.split('-')[0]
-            counts[m].append(n)
-        print(f'{"model":>8} {"files":>5}:{"repets":>7} + {"completed files":>15}')
+        print(f'[{it+1}/{stop}]', end='', flush=True)
+
+        # load cached data
+        if cachef.is_file():
+            with open(cachef) as f:
+                cache = yaml.load(f, yaml.Loader)
+        else:
+            cache = dict()
+
+        # process all files found in simuls/ dict, and check number of lines if file has changed
+        for p in sorted(path.glob(f'*-*.txt')):
+            sz = p.stat().st_size
+            if p in cache:
+                assert sz >= cache[p][0]
+            if p not in cache: cache[p] = [0, 0, 0]
+            if sz != cache[p][0]:
+                res = subprocess.run(['wc', '-l', str(p)], stdout=subprocess.PIPE).stdout
+                ln = int(res.split()[0])
+                if ln > 0: ln -= 1
+                print('.', end='', flush=True)
+                cache[p] = [sz, ln, ln-cache[p][2]]
+            else:
+                cache[p][2] = 0
+        print()
+
+        # save data
+        with open(cachef, 'w') as f:
+            yaml.dump(cache, f)
+
+        # sort data per models
+        counts = {m: [[], 0] for m in models}
+        for (p, (sz, ln, diff)) in cache.items():
+            m, idx = p.stem.split('-')
+            counts[m][0].append(ln)
+            counts[m][1] += diff
+
+        print(f'{"model":>8} | {"files":>5} | {"repets":>7} | {"completed files":>17} |    diff')
         for m in models:
             nf1 = 0
             nf2 = 0
             nr1 = 0
             nr2 = 0
-            for n in counts[m]:
+            cnt, diff = counts[m]
+            for n in cnt:
                 nf1 += 1
                 nr1 += n
                 if n == expect:
                     nf2 += 1
                     nr2 += n
-            print(f'{m:>8} {nf1:>5}:{nr1:>7} | {nf2:>7}:{nr2:>7}')
+            print(f'{m:>8} | {nf1:>5} | {nr1:>7} | {nf2:>7} | {nr2:>7} | {diff:+7d}')
         else:
             # loop control
             if it == stop - 1: break

@@ -8,8 +8,8 @@ sites:
     thin: 10                        # thinning factor: (thin-1) sites are ignored before including a site
 simul:
     models: []                      # choice of models to run (empty = all)
-    first_batch: 51                 # index of first batch (in principle: 1)
-    nbatch: 50                      # number of batches for parallelization
+    first_batch: 1                  # index of first batch (in principle: 1)
+    nbatch: 100                      # number of batches for parallelization
     szbatch: 10000                  # size of each batch (replicates)
     thin: 100                       # thin factor for progress monitoring
     priors:                         # prior specifications (see priors in simul.py)
@@ -21,22 +21,28 @@ simul:
     overwrite: no                   # whether existing files should be overwritten (use non-0 with care)
     intercept: no                  # whether errors shouls be silently caught and saved in a file (applies to posterior simulations too)
 models:                            # specify a color and symbol for each model (or model grouping)
-    M31: [indianred, o]
-    M3B: [red, ^]
-    M32: [greenyellow, o]
-    M33: [yellowgreen, ^]
-    M34: [blue, o]
-    M3C: [aqua, ^]
-    M35: [lime, s]
-    M36: [limegreen, v]
-    M37: [orange, s]
-    M38: [gold, v]
-    M39: [turquoise, s]
-    M3A: [navy, v]
-    M3D: [gray, o]
-    M40: [lightgray, s]
-    M41: [blueviolet, o]
-    M44: [violet, s]
+    M31: [aqua, o]
+    M3B: [aquamarine, ^]
+    M32: [azure, v]
+    M33: [beige, s]
+    M34: [black, o]
+    M3C: [blue, ^]
+    M35: [brown, v]
+    M36: [chartreuse, s]
+    M37: [chocolate, o]
+    M38: [coral, ^]
+    M39: [crimson, v]
+    M3A: [cyan, s]
+    M3D: [darkblue, o]
+    M40: [darkgreen, ^]
+    M41: [fuchsia, v]
+    M42: [gold, s]
+    M43: [goldenrod, o]
+    M44: [green, ^]
+    M45: [grey, v]
+    M46: [indigo, s]
+    M47: [khaki, o]
+    M48: [lightblue, ^]
     with: [magenta]
     without: [blue]
     NA: [green, o]
@@ -62,60 +68,22 @@ lda:
                                     # item: 2-item list giving the dimensions to use for that plot
                                     # or 0 for disabling the plot
     pad: 1                          # pad between plots
-ranger:
-    nsam: 600000                    # required number of samples to import
-    modelchoice:
-        overwrite: no               # whether to overwrite previous analyses (can be overruled)
-        nsam: [600000]              # number of samples (can be overwritten)
-        analyses:                   # set of analyses to perform
-            default:                # a free name
-                nsam:               # overwrite numbers of sample
-                    - 100000
-                    - 200000
-                    - 300000
-                    - 400000
-                    - 500000
-                    - 600000
-                models: []          # list of models to consider (by default, use all)
-            origin:
-                groups:             # groups of models (as a list of [label, list of samples] items)
-                    - - EU
-                      - [M31, M3B, M37, M38]
-                    - - NA
-                      - [M32, M33, M35, M36, M41, M44]
-                    - - BR
-                      - [M34, M3C, M39, M3A]
-            unsampled:
-                groups:
-                    - - with
-                      - [M40, M41, M44, M3D]
-                    - - without
-                      - [M31, M3B, M37, M38,
-                         M32, M33, M35, M36,
-                         M34, M3C, M39, M3A]
-            final:
-                nsam:
-                    - 100000
-                    - 200000
-                    - 300000
-                    - 400000
-                    - 500000
-                    - 600000
-                models: [M33, M44]
-            without-unsampled:
-                nsam:
-                    - 100000
-                    - 200000
-                    - 300000
-                    - 400000
-                    - 500000
-                    - 600000
-                models: [M31, M3B, M32, M33,
-                         M34, M3C, M35, M36,
-                         M37, M38, M39, M3A]
-    estimparams:
-        overwrite: no               # whether to overwrite previous results
-        models: [M33, M44]          # list of models to consider
+modelchoice:
+    overwrite: no                   # skip if destination directory exists
+    nsam:                           # number of samples to consider
+        - 1000
+        - 2000
+        - 3000
+        - 4000
+        - 5000
+    analyses:                       # set of analyses to perform
+        first:                      # name of the analysis
+            models: [               # specify list of models to process
+                M31, M3B, M32, M33, M34, M3C, M35,
+                M36, M37, M38, M39, M3A, M3D]
+            
+
+
 post:
     models: [M33, M44]              # models to process
     prior: 10000                    # number of simulated points to import for prior

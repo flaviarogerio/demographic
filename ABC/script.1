@@ -1,0 +1,15 @@
+#!/bin/bash
+#SBATCH --job-name=simul1
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=demita@gmail.com
+#SBATCH --partition=workq
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=50
+#SBATCH --mem=16G
+#SBATCH --nodes=1
+#SBATCH --time=24:00:00
+#SBATCH --output=simul1.log
+pwd; hostname; date
+module load devel/python/Python-3.11.1
+srun python -n 50 simul.py M41 M42
+date
