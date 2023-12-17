@@ -1,13 +1,7 @@
 *~
 _*
+ABC/monitor.yml
 ABC/error-*
 ABC/simuls/*
 ABC/post/*/simuls/*
-ABC/ranger/estimparams/*/*/out.*
-ABC/ranger/modelchoice/*/confusion
-ABC/ranger/modelchoice/*/lda
-ABC/ranger/modelchoice/*/lda.*
-ABC/ranger/modelchoice/*/predictions
-ABC/ranger/modelchoice/*/settings
-ABC/ranger/modelchoice/*/importance
-ABC/ranger/modelchoice/*/ooberror
+out.*

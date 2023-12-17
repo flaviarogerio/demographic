@@ -45,10 +45,9 @@ def monitor(delay, stop):
             cache = dict()
 
         # process all files found in simuls/ dict, and check number of lines if file has changed
-        for p in sorted(path.glob(f'*-*.txt')):
+        files = sorted(path.glob(f'*-*.txt'))
+        for p in files:
             sz = p.stat().st_size
-            if p in cache:
-                assert sz >= cache[p][0]
             if p not in cache: cache[p] = [0, 0, 0]
             if sz != cache[p][0]:
                 res = subprocess.run(['wc', '-l', str(p)], stdout=subprocess.PIPE).stdout
@@ -66,10 +65,18 @@ def monitor(delay, stop):
 
         # sort data per models
         counts = {m: [[], 0] for m in models}
+        rm = set()
         for (p, (sz, ln, diff)) in cache.items():
+            if p not in files:
+                rm.add(p)
+                continue
             m, idx = p.stem.split('-')
             counts[m][0].append(ln)
             counts[m][1] += diff
+
+        # delete files who have vanished from cache
+        for p in rm:
+            del cache[p]
 
         print(f'{"model":>8} | {"files":>5} | {"repets":>7} | {"completed files":>17} |    diff')
         for m in models:

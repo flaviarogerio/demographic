@@ -204,7 +204,7 @@ class Model:
         """
         apply parameters (must be defined in subclasses)
         """
-        raise NotImplemented
+        raise NotImplementedError
 
 class ThreePop(Model):
     """
@@ -536,7 +536,7 @@ class M43(M42):
     independent emergence of NA and BR (any order), EU from BR
     """
     def __init__(self):
-        super().__init__()
+        FourPop.__init__(self) # don't call M42 constructor who will add its own events
         self.coal.params.add_event('bottleneck', T=0, idx=2, S=0)
         self.coal.params.add_event('merge', T=0, src=2, dst=1)
         self.coal.params.add_event('bottleneck', T=0, idx=1, S=0)

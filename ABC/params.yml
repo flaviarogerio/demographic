@@ -1,11 +1,14 @@
 fname: ../../data/filtered_genotyped_combined_outgroup_208samples_pass_filter5_renamed.vcf
 samples: ../../data/list_samples.yml
 outgroup: C_navitas
+
 maf: 0.05                           # minimal minor allele frequency
 nthreads: 50                        # maximum number of CPUs
+
 sites:
     min_avail_prop: 0.5             # minimum proportion of non-missing samples per population
     thin: 10                        # thinning factor: (thin-1) sites are ignored before including a site
+
 simul:
     models: []                      # choice of models to run (empty = all)
     first_batch: 1                  # index of first batch (in principle: 1)
@@ -20,6 +23,7 @@ simul:
         m: [normal, 0.1, 0.2, 0, 1]
     overwrite: no                   # whether existing files should be overwritten (use non-0 with care)
     intercept: no                  # whether errors shouls be silently caught and saved in a file (applies to posterior simulations too)
+
 models:                            # specify a color and symbol for each model (or model grouping)
     M31: [aqua, o]
     M3B: [aquamarine, ^]
@@ -48,12 +52,15 @@ models:                            # specify a color and symbol for each model (
     NA: [green, o]
     BR: [blue, o]
     EU: [red, o]
+
 priors:
     num: 10000                      # max number of draws from each parameter
     bins: 20                        # number of bins in histograms
+
 plot:
     stop: 100000                    # stop using replicates when this number is reached
     bins: 50                        # number of bins in histogram
+
 lda:
     models: []                      # list of models to include (by default, all)
     stop: 50000                     # stop using replicates when this number is reached
@@ -68,22 +75,41 @@ lda:
                                     # item: 2-item list giving the dimensions to use for that plot
                                     # or 0 for disabling the plot
     pad: 1                          # pad between plots
+
 modelchoice:
     overwrite: no                   # skip if destination directory exists
-    nsam:                           # number of samples to consider
-        - 1000
-        - 2000
-        - 3000
-        - 4000
-        - 5000
+    nsam:                           # list of numbers of samples to consider
+        - 100000
+        - 200000
+        - 300000
+        - 400000
+        - 500000
+        - 600000
+        - 700000
+        - 800000
+    append: no                      # if no, results.txt is overwritten
     analyses:                       # set of analyses to perform
-        first:                      # name of the analysis
-            models: [               # specify list of models to process
-                M31, M3B, M32, M33, M34, M3C, M35,
-                M36, M37, M38, M39, M3A, M3D]
-            
+        without-unsampled:          # name of the analysis
+            models: [M31, M3B, M32, M33, M34,
+                     M3C, M35, M36, M37, M38,
+                     M39, M3A, M3D] # specify list of models to process
+        with-unsampled:
+            models: [M40, M41, M42, M43, M44, M45, M46, M47, M48]
+        compare-unsampled:
+            groups: [with, without] # specify name of groups
+            without: [M33, M39, M34, M35, M36] # list groups
+            with: [M41, M42, M43, M44, M45, M46, M47, M48]
+        subset:
+            models: [M33, M39, M34, M35, M36,
+                     M41, M42, M43, M44, M45,
+                     M46, M47, M48]
 
-
+estimparams:
+    overwrite: no                  # skip if destination directory exists
+    nsam: 1000000                  # number of samples to use
+    models:                        # list of models to use
+        - M33
+        - M41
 post:
     models: [M33, M44]              # models to process
     prior: 10000                    # number of simulated points to import for prior
