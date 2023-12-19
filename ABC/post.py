@@ -60,7 +60,7 @@ for name, pars in cfg['modelchoice']['analyses'].items():
     axes[1].set_xticklabels(['100K','200K','300K','400K','500K'])
     axes[1].plot([100000],[0], 'w,', zorder=-1000)
     fig.tight_layout()
-    fig.savefig((pathlib.Path('post') / name).with_suffix('.png'))
+    fig.savefig((pathlib.Path('post') / ('votes-' + name)).with_suffix('.png'))
     pyplot.close(fig)
 
 ### process all models ###
@@ -102,9 +102,6 @@ for model in cfg['post']['models']:
                 pred.append(v)
                 weights.append(w)
                 n += 1
-                if n == 10000:
-                    print('shortened')
-                    break   
 
         # smooth posterior with KDE
         kernels[model][param] = stats.gaussian_kde(pred, weights=weights)
@@ -266,21 +263,19 @@ def plot(ax, d1, d2, data):
 
 path = pathlib.Path('ranger') / 'modelchoice'
 for sub in path.iterdir():
-    ldaf = sub / 'lda'
-    print(f'plotting LDA for {sub.name}')
+    ldaf = sub / str(cfg['modelchoice']['nsam'][-1]) / 'out.lda'
 
     ### process all completed analyses ###
     ######################################
 
     if ldaf.is_file():
+        print(f'plotting LDA for {sub.name}')
 
         # determine list of group/model names
-        if 'groups' in cfg['ranger']['modelchoice']['analyses'][sub.name]:
-            groups = [i[0] for i in cfg['ranger']['modelchoice']['analyses'][sub.name]['groups']]
-        elif cfg['ranger']['modelchoice']['analyses'][sub.name]['models'] == []:
-            groups = simul.model_names
+        if 'groups' in cfg['modelchoice']['analyses'][sub.name]:
+            groups = cfg['modelchoice']['analyses'][sub.name]['groups']
         else:
-            groups = cfg['ranger']['modelchoice']['analyses'][sub.name]['models']
+            groups = cfg['modelchoice']['analyses'][sub.name]['models']
 
         # split the LDA file into sub-files (per model) if not done already
         T = ldaf.stat().st_mtime
@@ -313,6 +308,7 @@ for sub in path.iterdir():
         nd = len(groups)-1
 
         # if only one dimension, plot a standard smoothed histogram
+        fname = (post_path / ('lda-' + sub.name)).with_suffix('.png')
         if nd == 1:
             fig, ax = pyplot.subplots()
             for g in groups:
@@ -327,7 +323,7 @@ for sub in path.iterdir():
             ax.set_title(f'LDA {sub.name}')
             ax.legend()
             fig.tight_layout()
-            fig.savefig((post_path / sub.name).with_suffix('.png'))
+            fig.savefig(fname)
             pyplot.close(fig)
 
         # two dimensions: scatter plot
@@ -336,7 +332,7 @@ for sub in path.iterdir():
             plot(ax, 0, 1, data)
             ax.legend()
             fig.tight_layout()
-            fig.savefig((post_path / sub.name).with_suffix('.png'))
+            fig.savefig(fname)
             pyplot.close(fig)
 
         # more than two dimensions, plot the first two pairs
@@ -347,6 +343,5 @@ for sub in path.iterdir():
             plot(axes[1], 2, 3, data)
             axes[0].legend(bbox_to_anchor=(1.1,1))
             fig.tight_layout()
-            print((post_path / sub.name).with_suffix('.png'))
-            fig.savefig((post_path / sub.name).with_suffix('.png'))
+            fig.savefig(fname)
             pyplot.close(fig)
