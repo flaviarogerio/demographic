@@ -3,7 +3,7 @@ samples: ../../data/list_samples.yml
 outgroup: C_navitas
 
 maf: 0.05                           # minimal minor allele frequency
-nthreads: 50                        # maximum number of CPUs
+nthreads: 50                         # maximum number of CPUs
 
 sites:
     min_avail_prop: 0.5             # minimum proportion of non-missing samples per population
@@ -47,8 +47,8 @@ models:                            # specify a color and symbol for each model (
     M46: [indigo, s]
     M47: [khaki, o]
     M48: [lightblue, ^]
-    with: [magenta]
-    without: [blue]
+    with: [magenta, o]
+    without: [blue, s]
     NA: [green, o]
     BR: [blue, o]
     EU: [red, o]
@@ -84,10 +84,6 @@ modelchoice:
         - 300000
         - 400000
         - 500000
-        - 600000
-        - 700000
-        - 800000
-    append: no                      # if no, results.txt is overwritten
     analyses:                       # set of analyses to perform
         without-unsampled:          # name of the analysis
             models: [M31, M3B, M32, M33, M34,
@@ -110,12 +106,15 @@ estimparams:
     models:                        # list of models to use
         - M33
         - M41
+        - M44
+        - M46
+        - M42
 post:
-    models: [M33, M44]              # models to process
+    models: [M33, M41, M44]         # models to process
     prior: 10000                    # number of simulated points to import for prior
     lda: 1000                       # number of points to import for LDA
-    sim_n: 40                       # number of posterior simulation batches
-    sim_sz: 250                     # number of simulations in each posterior batch
-    sim_thin: 50                    # progress messages frequency
+    sim_n: 10                       # number of posterior simulation batches
+    sim_sz: 1000                    # number of simulations in each posterior batch
+    sim_thin: 10                    # progress messages frequency
     sim_overwrite: no               # perform simulations even if output files are here
     bins: 20                        # number of bins in statistics histograms

@@ -1,0 +1,14 @@
+#!/bin/bash
+#SBATCH --job-name=fit42
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=demita@gmail.com
+#SBATCH --partition=fast
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=50
+#SBATCH --mem=16G
+#SBATCH --nodes=1
+#SBATCH --time=24:00:00
+#SBATCH --output=fig42.log
+pwd; hostname; date
+srun python ranger.py -e M42
+date

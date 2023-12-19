@@ -123,8 +123,6 @@ def modelchoice(dry_run):
     output = {}
     for key in cfg['modelchoice']['analyses']:
         output[key] = destination_path / 'modelchoice' / key / 'results.txt'
-        if not cfg['modelchoice']['append']:
-            output[key].unlink(missing_ok=True)
 
     # iterate over sample sizes first
     for nsam in cfg['modelchoice']['nsam']:

@@ -28,6 +28,41 @@ with open('obs.txt') as f:
         par, v = line.split()
         obs[par] = float(v)
 
+### process model comparisons ###
+#################################
+
+for name, pars in cfg['modelchoice']['analyses'].items():
+    if 'models' in pars: groups = pars['models']
+    else: groups = pars['groups']
+    n = []
+    votes = {g: [] for g in groups}
+    P = []
+    with open(pathlib.Path('ranger') / 'modelchoice' / name / 'results.txt') as f:
+        for line in f:
+            line = line.split()
+            n.append(int(line[0]))
+            for i, g in enumerate(groups):
+                votes[g].append(int(line[2+i]))
+            P.append(float(line[-1]))
+    fig, axes = pyplot.subplots(2, 1, figsize=(6.4, 2*4.8))
+    axes[0].plot(n, P, 'ko-', mfc='w')
+    axes[0].set_ylabel('Proba')
+    axes[0].set_ylim(0, 1)
+    axes[0].set_xticks([100000,200000,300000,400000,500000])
+    axes[0].set_xticklabels(['100K','200K','300K','400K','500K'])
+    axes[0].set_title(name)
+    for g in groups:
+        c, symb = cfg['models'][g]
+        axes[1].plot(n, votes[g], label=g, c=c, mfc='w', ls='-', marker=symb)
+    axes[1].set_ylabel('Number of votes')
+    axes[1].legend(bbox_to_anchor=(1.05, 1))
+    axes[1].set_xticks([100000,200000,300000,400000,500000])
+    axes[1].set_xticklabels(['100K','200K','300K','400K','500K'])
+    axes[1].plot([100000],[0], 'w,', zorder=-1000)
+    fig.tight_layout()
+    fig.savefig((pathlib.Path('post') / name).with_suffix('.png'))
+    pyplot.close(fig)
+
 ### process all models ###
 ##########################
 
@@ -39,12 +74,15 @@ for model in cfg['post']['models']:
     # ensures the output dir exists
     dst = pathlib.Path('post') / model
     dst.mkdir(exist_ok=True)
+    (dst / 'params').mkdir(exist_ok=True)
+    (dst / 'stats').mkdir(exist_ok=True)
     kernels[model] = {}
 
     ### process all parameters ###
     ##############################
 
     m = simul.models_map[model]()
+
     for param in m.params:
 
         # skip if posterior data not available
@@ -56,12 +94,17 @@ for model in cfg['post']['models']:
         ########################
         pred = []
         weights = []
+        n = 0
         with open(post) as f:
             f.readline()
             for line in f:
                 v, w  = map(float, line.split(','))
                 pred.append(v)
                 weights.append(w)
+                n += 1
+                if n == 10000:
+                    print('shortened')
+                    break   
 
         # smooth posterior with KDE
         kernels[model][param] = stats.gaussian_kde(pred, weights=weights)
@@ -119,7 +162,9 @@ for model in cfg['post']['models']:
             pars = {}
             for p in self.params:
                 while True:
-                    if (v := kernels[model][p].resample(1, random.randint(1000000,9999999))[0][0]) > 0:
+                    if p not in kernels[self.model]:
+                        raise RuntimeError(f'posterior distribution not found for: {self.model}')
+                    if (v := kernels[self.model][p].resample(1, random.randint(1000000,9999999))[0][0]) > 0:
                         pars[p] = v
                         break
             return pars
@@ -127,6 +172,7 @@ for model in cfg['post']['models']:
     # run simulations
     print(f'posterior simulations for model {model}')
     m = Model()
+    m.model = model
     jobs = []
 
     sim_path = pathlib.Path('post') / model / 'simuls'
@@ -182,7 +228,7 @@ def lda_split(path, n):
     with open(path) as f:
         for line in f:
             if line[0] == '#': continue
-            k = int(re.search('(\d+)$', line, re.MULTILINE).group(1))
+            k = int(re.search('([0-9]+)$', line, re.MULTILINE).group(1))
             if k == 0: continue
             counts[k] += 1
             f_map[k].write(line)
