@@ -84,7 +84,7 @@ Xn = lda.transform(X)
 obs_proj = lda.transform([obs_v])
 
 # make 2D plots
-fig, axes = pyplot.subplots(nrow, ncol, figsize=(ncol*6.4, nrow*4.8), squeeze=False)
+fig, axes = pyplot.subplots(nrow, ncol, figsize=((ncol+0.25)*6.4, nrow*4.8), squeeze=False)
 for i in range(nrow):
     for j in range(ncol):
         if  plan[i][j] == 0:
@@ -141,10 +141,9 @@ for i in range(nrow):
 for mod in models:
     col, symb = cfg['models'][mod]
     axes[0][-1].plot([], [], mec=col, marker=symb, mfc='None', ls='None', label=mod)
-axes[0][j].plot([], [], marker='*', ms=10, mfc='w', mec='k', label='obs')
-axes[0][-1].legend(bbox_to_anchor=(1.1,0.5))
-
-fig.tight_layout(pad=cfg['lda']['pad'])
+axes[0][j].plot([], [], marker='*', ls='None', ms=10, mfc='w', mec='k', label='obs')
+fig.legend(loc='center right', bbox_to_anchor=(0.95, 0.5))
+fig.tight_layout(rect=(0, 0, 0.8, 1))  #pad=cfg['lda']['pad']
 fig.savefig(dst / 'lda.png')
 pyplot.close(fig)
 

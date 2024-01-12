@@ -3,7 +3,7 @@ samples: ../../data/list_samples.yml
 outgroup: C_navitas
 
 maf: 0.05                           # minimal minor allele frequency
-nthreads: 50                         # maximum number of CPUs
+nthreads: 40                         # maximum number of CPUs
 
 sites:
     min_avail_prop: 0.5             # minimum proportion of non-missing samples per population
@@ -26,9 +26,9 @@ simul:
 
 models:                            # specify a color and symbol for each model (or model grouping)
     M31: [aqua, o]
-    M3B: [aquamarine, ^]
-    M32: [azure, v]
-    M33: [beige, s]
+    M3B: [teal, ^]
+    M32: [lime, v]
+    M33: [mediumvioletred, s]
     M34: [black, o]
     M3C: [blue, ^]
     M35: [brown, v]
@@ -110,7 +110,8 @@ estimparams:
         - M46
         - M42
 post:
-    models: [M33, M41, M44]         # models to process
+    models: [M33, M41, M44,
+             M42, M46]              # models to process
     prior: 10000                    # number of simulated points to import for prior
     lda: 1000                       # number of points to import for LDA
     sim_n: 10                       # number of posterior simulation batches
