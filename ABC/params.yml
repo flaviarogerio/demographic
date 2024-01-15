@@ -42,7 +42,7 @@ models:                            # specify a color and symbol for each model (
     M41: [fuchsia, v]
     M42: [gold, s]
     M43: [goldenrod, o]
-    M44: [green, ^]
+    M44: [green, o]
     M45: [grey, v]
     M46: [indigo, s]
     M47: [khaki, o]
@@ -52,6 +52,30 @@ models:                            # specify a color and symbol for each model (
     NA: [green, o]
     BR: [blue, o]
     EU: [red, o]
+
+model_mapping: # more straightforward naming scheme for publication
+    M31: M1
+    M3B: M2
+    M37: M3
+    M38: M4
+    M32: M5
+    M33: M6
+    M35: M7
+    M36: M8
+    M34: M9
+    M3C: M10
+    M39: M11
+    M3A: M12
+    M3D: M13
+    M42: M14
+    M43: M15
+    M45: M16
+    M40: M17
+    M44: M18
+    M46: M19
+    M41: M20
+    M47: M21
+    M48: M22
 
 priors:
     num: 10000                      # max number of draws from each parameter
@@ -86,16 +110,20 @@ modelchoice:
         - 500000
     analyses:                       # set of analyses to perform
         without-unsampled:          # name of the analysis
+            label: "No unsampled population"
             models: [M31, M3B, M32, M33, M34,
                      M3C, M35, M36, M37, M38,
                      M39, M3A, M3D] # specify list of models to process
         with-unsampled:
+            label: "With an unsampled population"
             models: [M40, M41, M42, M43, M44, M45, M46, M47, M48]
         compare-unsampled:
+            label: "Unsampled population test"
             groups: [with, without] # specify name of groups
             without: [M33, M39, M34, M35, M36] # list groups
             with: [M41, M42, M43, M44, M45, M46, M47, M48]
         subset:
+            label: "Subset of models"
             models: [M33, M39, M34, M35, M36,
                      M41, M42, M43, M44, M45,
                      M46, M47, M48]

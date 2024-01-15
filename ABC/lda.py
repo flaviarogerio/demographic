@@ -25,6 +25,10 @@ else:
     assert len(models) == len(set(models))
     assert len(models) > 2
 
+# get model renaming mapping and order models
+mp = cfg['model_mapping']
+models.sort(key=lambda m: int(mp[m][1:]))
+
 # get user-specified plot structure
 plan = cfg['lda']['struct']
 nrow = len(plan)
@@ -140,7 +144,7 @@ for i in range(nrow):
 
 for mod in models:
     col, symb = cfg['models'][mod]
-    axes[0][-1].plot([], [], mec=col, marker=symb, mfc='None', ls='None', label=mod)
+    axes[0][-1].plot([], [], mec=col, marker=symb, mfc='None', ls='None', label=mp[mod])
 axes[0][j].plot([], [], marker='*', ls='None', ms=10, mfc='w', mec='k', label='obs')
 fig.legend(loc='center right', bbox_to_anchor=(0.95, 0.5))
 fig.tight_layout(rect=(0, 0, 0.8, 1))  #pad=cfg['lda']['pad']
@@ -161,10 +165,10 @@ for i in range(len(models)-1):
         kernel = scipy.stats.gaussian_kde(Z)
         x = [mini+(maxi-mini)*i/50 for i in range(51)]
         y = kernel(x)
-        ax.plot(x, y, c=col, ls='-', marker='None', label=mod)
+        ax.plot(x, y, c=col, ls='-', marker='None', label=mp[mod])
         ax.set_yticks([])
         #ax2 = ax.twinx()
-        #ax2.hist(Z, bins=cfg['lda']['bins'], histtype='step', color=col, range=(mini, maxi), label=mod)
+        #ax2.hist(Z, bins=cfg['lda']['bins'], histtype='step', color=col, range=(mini, maxi), label=mp[mod])
         #ax2.set_yticks([])
     ax.axvline(obs_proj[0,i], c='k')
     ax.set_title(f'LDA{i+1} variance explained: {lda.explained_variance_ratio_[i] * 100:.2f}%')

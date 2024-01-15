@@ -21,6 +21,9 @@ with open('params.yml') as f:
 post_path = pathlib.Path('post')
 post_path.mkdir(exist_ok=True)
 
+# get model renaming mapping
+mp = cfg['model_mapping']
+
 # get observed stats
 obs = {}
 with open('obs.txt') as f:
@@ -45,20 +48,28 @@ for name, pars in cfg['modelchoice']['analyses'].items():
                 votes[g].append(int(line[2+i]))
             P.append(float(line[-1]))
     fig, axes = pyplot.subplots(2, 1, figsize=(6.4, 2*4.8))
-    axes[0].plot(n, P, 'ko-', mfc='w')
-    axes[0].set_ylabel('Proba')
-    axes[0].set_ylim(0, 1)
-    axes[0].set_xticks([100000,200000,300000,400000,500000])
-    axes[0].set_xticklabels(['100K','200K','300K','400K','500K'])
-    axes[0].set_title(name)
-    for g in groups:
-        c, symb = cfg['models'][g]
-        axes[1].plot(n, votes[g], label=g, c=c, mfc='w', ls='-', marker=symb)
-    axes[1].set_ylabel('Number of votes')
-    axes[1].legend(bbox_to_anchor=(1.05, 1))
+    axes[1].plot(n, P, 'ko-', mfc='w')
+    axes[1].set_ylabel('Posterior probability')
+    axes[1].set_ylim(0, 1)
     axes[1].set_xticks([100000,200000,300000,400000,500000])
     axes[1].set_xticklabels(['100K','200K','300K','400K','500K'])
-    axes[1].plot([100000],[0], 'w,', zorder=-1000)
+
+    # sort models based on new model code
+    # just before plotting
+    # only if models are plotted
+    if 'models' in pars:
+        groups.sort(key=lambda m: int(mp[m][1:]))
+
+    for g in groups:
+        lbl = mp.get(g, g) # used recoded model number if it is a model
+        c, symb = cfg['models'][g]
+        axes[0].plot(n, votes[g], label=lbl, c=c, mfc='w', ls='-', marker=symb)
+    axes[0].set_ylabel('Number of votes')
+    axes[0].legend(bbox_to_anchor=(1.05, 1))
+    axes[0].set_xticks([100000,200000,300000,400000,500000])
+    axes[0].set_xticklabels(['100K','200K','300K','400K','500K'])
+    axes[0].plot([100000],[0], 'w,', zorder=-1000)
+    axes[0].set_title(pars['label'])
     fig.tight_layout()
     fig.savefig((pathlib.Path('post') / ('votes-' + name)).with_suffix('.png'))
     pyplot.close(fig)
